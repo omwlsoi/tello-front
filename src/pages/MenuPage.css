@@ -1,0 +1,249 @@
+/* 전체 배경 및 중앙 정렬 */
+.menu-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  margin: 0;
+}
+
+.layout-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* 모바일 화면 프레임 (스마트폰 비율) */
+.mobile-frame {
+  width: 390px;
+  height: 844px;
+  background-color: #ffffff;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+}
+
+/* 상단 헤더 */
+.menu-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  z-index: 10;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+}
+
+.menu-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+/* 카테고리 탭 영역 (크게 키움) */
+.category-tab-bar {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.category-btn {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 15px;
+  font-weight: 700;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-btn.active {
+  background-color: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+/* 메뉴 그리드 영역 (2열 배치, 이미지를 키움) */
+.menu-grid-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  background-color: #fafafa;
+  align-content: start;
+}
+
+.menu-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.menu-card:hover {
+  border-color: #2563eb;
+  background-color: #f8fafc;
+}
+
+.menu-img-box {
+  width: 75px;
+  height: 75px;
+  background-color: #f3f4f6;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px; /* 이모지/아이콘 크기 확대 */
+  margin-bottom: 12px;
+}
+
+.menu-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.menu-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* 하단 장바구니 버튼 영역 */
+.menu-footer {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.view-cart-main-btn {
+  width: 100%;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+}
+
+.view-cart-main-btn:hover {
+  background-color: #1d4ed8;
+}
+
+/* 옵션 선택 팝업 모달 (고령자 맞춤형 확대) */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 100;
+}
+
+.modal-content-sheet {
+  background: white;
+  width: 100%;
+  padding: 28px 24px;
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 -10px 25px rgba(0,0,0,0.15);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.selected-item-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+  margin: 12px 0 4px 0;
+}
+
+.option-guide {
+  font-size: 15px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.option-btn-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.option-select-btn {
+  flex: 1;
+  padding: 18px;
+  border-radius: 14px;
+  border: 2px solid #2563eb;
+  background: white;
+  color: #2563eb;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.option-select-btn span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.modal-close-btn {
+  width: 100%;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}

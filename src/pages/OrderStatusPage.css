@@ -1,0 +1,135 @@
+/* 전체 배경 및 중앙 정렬 */
+.status-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  margin: 0;
+}
+
+/* 모바일 화면 프레임 (스마트폰 비율) */
+.mobile-frame {
+  width: 390px;
+  height: 844px;
+  background-color: #ffffff;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+}
+
+/* 상단 헤더 */
+.status-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+}
+
+.home-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.status-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+/* 메인 주문 완료 안내 영역 */
+.status-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  background-color: #fafafa;
+}
+
+.complete-icon-box {
+  width: 80px;
+  height: 80px;
+  background-color: #dbeafe;
+  color: #2563eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  margin-bottom: 20px;
+}
+
+.status-main-msg {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.status-sub-msg {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0 0 32px 0;
+}
+
+/* 주문 번호표 박스 */
+.order-number-box {
+  background: white;
+  border: 2px solid #e5e7eb;
+  padding: 20px 32px;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  margin-bottom: 24px;
+  width: 80%;
+}
+
+.number-label {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.number-value {
+  font-size: 36px;
+  font-weight: 900;
+  color: #2563eb;
+}
+
+/* 하단 홈으로 가기 버튼 */
+.status-footer {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.go-home-main-btn {
+  width: 100%;
+  background-color: #111827;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.go-home-main-btn:hover {
+  background-color: #1f2937;
+}
