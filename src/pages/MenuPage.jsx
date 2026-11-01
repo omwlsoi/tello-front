@@ -2,22 +2,22 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MenuPage.css';
 
-// 카테고리별 메뉴 데이터 정의 (가격 및 이미지 아이콘 포함)[cite: 6]
+// 메뉴 데이터 정의
 const menuData = {
   coffee: [
-    { id: 1, name: '아메리카노', price: 3000, icon: '☕' },
-    { id: 2, name: '아이스 아메리카노', price: 3000, icon: '🧊' },
-    { id: 3, name: '카페라테', price: 3500, icon: '🥛' },
-    { id: 4, name: '바닐라라테', price: 4000, icon: '🧋' },
+    { id: 1, name: '아메리카노', price: 3000, icon: '☕', hasTemp: true },
+    { id: 2, name: '아이스 아메리카노', price: 3000, icon: '🧊', hasTemp: false },
+    { id: 3, name: '카페라테', price: 3500, icon: '🥛', hasTemp: true },
+    { id: 4, name: '바닐라라테', price: 4000, icon: '🧋', hasTemp: true },
   ],
   drink: [
-    { id: 5, name: '초코우유', price: 3500, icon: '🍫' },
-    { id: 6, name: '딸기우유', price: 3500, icon: '🍓' },
-    { id: 7, name: '사과주스', price: 3000, icon: '🧃' },
+    { id: 5, name: '초코우유', price: 3500, icon: '🍫', hasTemp: false },
+    { id: 6, name: '딸기우유', price: 3500, icon: '🍓', hasTemp: false },
+    { id: 7, name: '사과주스', price: 3000, icon: '🧃', hasTemp: false },
   ],
   dessert: [
-    { id: 8, name: '초코쿠키', price: 2000, icon: '🍪' },
-    { id: 9, name: '크루아상', price: 3000, icon: '🥐' },
+    { id: 8, name: '초코쿠키', price: 2000, icon: '🍪', hasTemp: false },
+    { id: 9, name: '크루아상', price: 3000, icon: '🥐', hasTemp: false },
   ],
 };
 
@@ -26,13 +26,38 @@ export default function MenuPage() {
   const [activeTab, setActiveTab] = useState('coffee');
   const [cartCount, setCartCount] = useState(0);
   
-  // 메뉴 클릭 시 옵션 모달(사이즈 선택 등) 띄우기 위한 상태
+  // 모달 및 상세 옵션 상태 관리
   const [selectedMenu, setSelectedMenu] = useState(null);
+  const [tempOption, setTempOption] = useState('아이스'); // '핫' 또는 '아이스'
+  const [sizeOption, setSizeOption] = useState('보통'); // '보통' 또는 '큰 사이즈'
+  const [iceOption, setIceOption] = useState('보통');     // '많이', '보통', '적게'
 
-  const handleAddToCart = (menuName) => {
+  const handleOpenModal = (item) => {
+    setSelectedMenu(item);
+    // 초기 옵션 기본값 설정
+    setTempOption(item.name.includes('아이스') ? '아이스' : '핫');
+    setSizeOption('보통');
+    setIceOption('보통');
+  };
+
+  const handleAddToCart = () => {
+    let finalName = selectedMenu.name;
+    let addPrice = 0;
+
+    if (sizeOption === '큰 사이즈') {
+      finalName += ' (큰 사이즈)';
+      addPrice += 500;
+    }
+    if (selectedMenu.hasTemp || selectedMenu.name.includes('아이스')) {
+      finalName = `[${tempOption}] ` + finalName;
+      if (tempOption === '아이스') {
+        finalName += ` (얼음:${iceOption})`;
+      }
+    }
+
     setCartCount(cartCount + 1);
     setSelectedMenu(null);
-    alert(`"${menuName}"이(가) 장바구니에 담겼습니다!`);
+    alert(`"${finalName}"이(가) 장바구니에 담겼습니다!`);
   };
 
   return (
@@ -49,7 +74,7 @@ export default function MenuPage() {
             <button className="back-btn" onClick={() => navigate('/voice')} style={{fontSize: '14px', color: '#2563eb'}}>말하기</button>
           </div>
 
-          {/* 카테고리 탭 (고령자 맞춤형 큼직한 버튼) */}
+          {/* 카테고리 탭 */}
           <div className="category-tab-bar">
             <button 
               className={`category-btn ${activeTab === 'coffee' ? 'active' : ''}`}
@@ -77,7 +102,7 @@ export default function MenuPage() {
               <div 
                 key={item.id} 
                 className="menu-card"
-                onClick={() => setSelectedMenu(item)}
+                onClick={() => handleOpenModal(item)}
               >
                 <div className="menu-img-box">{item.icon}</div>
                 <div className="menu-name">{item.name}</div>
@@ -86,7 +111,7 @@ export default function MenuPage() {
             ))}
           </div>
 
-          {/* 하단 장바구니 확인 버튼 */}
+          {/* 하단 장바구니 버튼 */}
           <div className="menu-footer">
             <button 
               className="view-cart-main-btn"
@@ -96,28 +121,96 @@ export default function MenuPage() {
             </button>
           </div>
 
-          {/* 옵션 선택 팝업 모달 (시안의 2번째 화면 반영)[cite: 6] */}
+          {/* 상세 옵션 선택 팝업 모달 */}
           {selectedMenu && (
             <div className="modal-overlay">
               <div className="modal-content-sheet">
-                <div className="menu-img-box" style={{width: '90px', height: '90px', fontSize: '42px'}}>
-                  {selectedMenu.icon}
+                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
+                  <div className="menu-img-box" style={{width: '60px', height: '60px', fontSize: '28px', margin: 0}}>
+                    {selectedMenu.icon}
+                  </div>
+                  <div>
+                    <h3 className="selected-item-title" style={{textAlign: 'left'}}>{selectedMenu.name}</h3>
+                    <div style={{fontSize: '15px', color: '#2563eb', fontWeight: '700'}}>
+                      기본 {selectedMenu.price.toLocaleString()}원
+                    </div>
+                  </div>
                 </div>
-                <h3 className="selected-item-title">{selectedMenu.name}</h3>
-                <p className="option-guide">원하시는 크기를 골라주세요</p>
-                
+
+                {/* 1. 온도 선택 (핫 / 아이스) - 커피류 등에 적용 */}
+                {selectedMenu.hasTemp && (
+                  <>
+                    <div className="option-section-title">온도 선택</div>
+                    <div className="option-btn-group">
+                      <button 
+                        className={`option-btn ${tempOption === '핫' ? 'selected' : ''}`}
+                        onClick={() => setTempOption('핫')}
+                      >
+                        🔥 따뜻하게 (핫)
+                      </button>
+                      <button 
+                        className={`option-btn ${tempOption === '아이스' ? 'selected' : ''}`}
+                        onClick={() => setTempOption('아이스')}
+                      >
+                        🧊 시원하게 (아이스)
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 2. 사이즈 선택 (보통 / 큰 사이즈) */}
+                <div className="option-section-title">크기 선택</div>
                 <div className="option-btn-group">
-                  <button className="option-select-btn" onClick={() => handleAddToCart(selectedMenu.name)}>
-                    보통 <span>{selectedMenu.price.toLocaleString()}원</span>
+                  <button 
+                    className={`option-btn ${sizeOption === '보통' ? 'selected' : ''}`}
+                    onClick={() => setSizeOption('보통')}
+                  >
+                    보통 <span>기본</span>
                   </button>
-                  <button className="option-select-btn" onClick={() => handleAddToCart(`${selectedMenu.name} (큰 사이즈)`)}>
-                    큰 사이즈 <span>{(selectedMenu.price + 500).toLocaleString()}원 (+500원)</span>
+                  <button 
+                    className={`option-btn ${sizeOption === '큰 사이즈' ? 'selected' : ''}`}
+                    onClick={() => setSizeOption('큰 사이즈')}
+                  >
+                    큰 사이즈 <span>+500원</span>
                   </button>
                 </div>
 
-                <button className="modal-close-btn" onClick={() => setSelectedMenu(null)}>
-                  닫기
-                </button>
+                {/* 3. 아이스 선택 시 얼음 양 선택 (많이 / 보통 / 적게) */}
+                {(!selectedMenu.hasTemp || tempOption === '아이스') && (
+                  <>
+                    <div className="option-section-title">얼음 양 선택</div>
+                    <div className="option-btn-group">
+                      <button 
+                        className={`option-btn ${iceOption === '많이' ? 'selected' : ''}`}
+                        onClick={() => setIceOption('많이')}
+                      >
+                        많이
+                      </button>
+                      <button 
+                        className={`option-btn ${iceOption === '보통' ? 'selected' : ''}`}
+                        onClick={() => setIceOption('보통')}
+                      >
+                        보통
+                      </button>
+                      <button 
+                        className={`option-btn ${iceOption === '적게' ? 'selected' : ''}`}
+                        onClick={() => setIceOption('적게')}
+                      >
+                        적게
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 하단 확인/닫기 버튼 */}
+                <div className="modal-action-row">
+                  <button className="modal-close-btn" onClick={() => setSelectedMenu(null)}>
+                    취소
+                  </button>
+                  <button className="modal-add-cart-btn" onClick={handleAddToCart}>
+                    담기 완료
+                  </button>
+                </div>
               </div>
             </div>
           )}

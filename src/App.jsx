@@ -6,6 +6,7 @@ import VoicePage from './pages/VoicePage';
 import MenuPage from './pages/MenuPage';
 import ConfirmPage from './pages/ConfirmPage';
 import OrderStatusPage from './pages/OrderStatusPage';
+import BossPage from './pages/BossPage';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/menu" element={<MenuPage />} />
       <Route path="/confirm" element={<ConfirmPage />} />
       <Route path="/status" element={<OrderStatusPage />} />
+      <Route path="/boss" element={<BossPage />} />
     </Routes>
   );
 }
