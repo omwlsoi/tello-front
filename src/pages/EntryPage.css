@@ -1,205 +1,77 @@
-/* 전체 배경 및 중앙 정렬 */
-.entry-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f3f4f6;
-  margin: 0;
+/* 1. 시작 화면 */
+.entry-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 4px;
+}
+.entry-brand__badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--blue-deep);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 17px;
+}
+.entry-sub {
+    margin-bottom: 6px;
 }
 
-/* 모바일 화면 프레임 (스마트폰 비율 고정) */
-.mobile-frame {
-  width: 390px;
-  height: 844px;
-  background-color: #ffffff;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  border-radius: 24px;
+.entry-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--ink);
+    background: var(--white);
+    color: var(--ink);
+    text-align: left;
 }
-
-/* 상단 헤더 영역 */
-.header {
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f3f4f6;
+.entry-card--voice {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
 }
-
-.logo-area {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.entry-card__tag {
+    align-self: flex-start;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 700;
 }
-
-.badge {
-  background-color: #1e3a8a;
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 6px;
+.entry-card__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
-
-.brand-name {
-  font-weight: 700;
-  font-size: 18px;
-  color: #1f2937;
+.entry-card__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
-
-.help-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid #d1d5db;
-  background-color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #4b5563;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.entry-card__icon--soft {
+    background: var(--soft);
 }
-
-.help-btn:hover {
-  background-color: #f9fafb;
+.entry-card__name {
+    font-size: 26px;
+    font-weight: 700;
 }
-
-/* 메인 타이틀 및 버튼 컨테이너 */
-.main-content {
-  padding: 0 24px;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  justify-content: center;
-  padding-bottom: 32px;
+.entry-card__desc {
+    font-size: 17px;
+    line-height: 1.5;
 }
-
-.title-area {
-  margin-bottom: 32px;
-}
-
-.title-area h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 4px 0;
-}
-
-.title-area p {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0;
-}
-
-/* 버튼 배치 영역 (간격을 좁게 주어 빈칸 없애기) */
-.button-group {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* 1. 말로 주문하기 버튼 (포인트 컬러) */
-.order-btn-voice {
-  width: 100%;
-  background-color: #2563eb;
-  color: white;
-  padding: 24px;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.2s;
-  text-align: left;
-}
-
-.order-btn-voice:hover {
-  background-color: #1d4ed8;
-}
-
-.recommend-badge {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 12px;
-  padding: 2px 10px;
-  border-radius: 9999px;
-  margin-bottom: 12px;
-  font-weight: 500;
-}
-
-.btn-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.btn-title {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.btn-desc {
-  font-size: 13px;
-  color: #dbeafe;
-  margin: 0;
-}
-
-/* 2. 눌러서 주문하기 버튼 (화이트 테두리) */
-.order-btn-touch {
-  width: 100%;
-  background-color: white;
-  color: #111827;
-  padding: 24px;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  border: 2px solid #e5e7eb;
-  cursor: pointer;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: background-color 0.2s;
-  text-align: left;
-}
-
-.order-btn-touch:hover {
-  background-color: #f9fafb;
-}
-
-.icon-box-gray {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.btn-desc-gray {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0;
+.entry-card__desc--sub {
+    color: var(--ink-2);
 }

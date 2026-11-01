@@ -1,20 +1,222 @@
-.boss-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #111827; margin: 0; font-family: sans-serif; }
-.boss-frame { width: 420px; height: 844px; background-color: #1f2937; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; justify-content: space-between; border-radius: 24px; overflow: hidden; border: 1px solid #374151; color: white; }
-.boss-header { padding: 20px; background: #111827; border-bottom: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; }
-.boss-header h2 { margin: 0; font-size: 18px; font-weight: 800; color: #f3f4f6; }
-.live-badge { background-color: #10b981; color: white; font-size: 11px; padding: 4px 8px; border-radius: 9999px; font-weight: 700; }
-.boss-body { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.order-card { background: #374151; border-radius: 16px; padding: 20px; border: 2px solid #4b5563; display: flex; flex-direction: column; gap: 12px; }
-.order-card.active { border-color: #3b82f6; background: #1e3a8a; }
-.order-top-row { display: flex; justify-content: space-between; align-items: center; }
-.order-num { font-size: 22px; font-weight: 900; color: #fbbf24; }
-.order-time { font-size: 12px; color: #9ca3af; }
-.order-menu-list { font-size: 15px; font-weight: 600; color: #e5e7eb; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
-.status-action-group { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
-.action-label { font-size: 12px; color: #9ca3af; font-weight: 600; }
-.btn-grid { display: flex; gap: 6px; }
-.status-ctrl-btn { flex: 1; padding: 10px 4px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: #4b5563; color: #d1d5db; }
-.status-ctrl-btn.active-blue { background: #2563eb; color: white; }
-.status-ctrl-btn.active-orange { background: #d97706; color: white; }
-.status-ctrl-btn.active-green { background: #16a34a; color: white; }
-.boss-footer { padding: 16px 20px; background: #111827; border-top: 1px solid #374151; text-align: center; font-size: 13px; color: #9ca3af; }
+/* 6. 매장 화면 (태블릿) */
+.boss-stage {
+    min-height: 100vh;
+    padding: 24px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+    background: var(--page);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+.boss-tools {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.boss-tools .demo-btn {
+    background: var(--panel);
+}
+
+.boss-tablet {
+    width: 100%;
+    max-width: 1180px;
+    min-height: 620px;
+    background: #f6f7fa;
+    color: var(--ink);
+    border: 10px solid #111318;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(10, 20, 40, 0.2);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.boss-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 16px 24px;
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+}
+.boss-header__title {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.boss-header__badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    color: var(--sub);
+}
+.boss-header__count {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.boss-calls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 24px 0;
+}
+.boss-call {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: var(--warn-bg);
+    border: 2px solid var(--warn-line);
+    color: var(--warn-ink);
+}
+.boss-call__text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 700;
+}
+.boss-call__reason {
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #fff;
+}
+.boss-call button {
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 2px solid var(--warn-ink-strong);
+    background: #fff;
+    color: var(--warn-ink);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.boss-grid {
+    padding: 16px 24px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+.boss-empty {
+    grid-column: 1 / -1;
+    padding: 40px;
+    text-align: center;
+    color: var(--sub);
+    font-size: 16px;
+}
+
+.boss-card {
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+.boss-card.is-new {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px var(--blue-soft);
+}
+.boss-card.is-ready {
+    opacity: 0.7;
+}
+.boss-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.boss-card__no {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.boss-card__time {
+    font-size: 13px;
+    color: var(--sub);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.boss-card__sample {
+    font-size: 11px;
+    border: 1px dashed #b8becb;
+    border-radius: 6px;
+    padding: 1px 6px;
+}
+.boss-card__tag {
+    align-self: flex-start;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--soft);
+    color: var(--ink-2);
+}
+.boss-card__tag.is-voice {
+    background: var(--blue-soft);
+    color: var(--blue-deep);
+}
+.boss-card__items {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+}
+.boss-card__hint {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--blue-soft);
+    color: var(--blue-deep);
+    font-weight: 600;
+}
+.boss-card__state {
+    font-size: 13px;
+    color: var(--sub);
+}
+.boss-card__btn {
+    height: 52px;
+    border-radius: var(--radius-sm);
+    border: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+}
+.boss-card__btn--dark {
+    background: var(--ink);
+}
+.boss-card__btn--blue {
+    background: var(--blue);
+}
+.boss-card__btn--green {
+    background: var(--ok-ink);
+}

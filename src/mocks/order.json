@@ -1,0 +1,36 @@
+{
+    "firstNo": 27,
+    "marks": [
+        { "name": "노란 별", "shape": "star", "color": "#F5B700" },
+        { "name": "초록 동그라미", "shape": "circle", "color": "#2E9E4F" },
+        { "name": "빨간 하트", "shape": "heart", "color": "#E04848" },
+        { "name": "파란 세모", "shape": "tri", "color": "#2B5BD7" }
+    ],
+    "modes": {
+        "voice": "말로 주문",
+        "touch": "눌러서 주문"
+    },
+    "statusLabels": {
+        "new": "새 주문",
+        "prep": "만드는 중",
+        "ready": "준비 완료"
+    },
+    "sampleOrders": [
+        {
+            "no": 26,
+            "markIndex": 1,
+            "mode": "touch",
+            "items": [{ "name": "초코우유", "qty": 2, "opt": "" }],
+            "status": "new",
+            "minutesAgo": 1
+        },
+        {
+            "no": 25,
+            "markIndex": 3,
+            "mode": "touch",
+            "items": [{ "name": "크루아상", "qty": 1, "opt": "" }],
+            "status": "prep",
+            "minutesAgo": 4
+        }
+    ]
+}

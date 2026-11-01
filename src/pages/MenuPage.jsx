@@ -1,223 +1,188 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header, { BackIcon, BellIcon, MicIcon } from '../components/common/Header';
+import BigButton from '../components/common/BigButton';
+import BottomSheet from '../components/common/BottomSheet';
+import Toast from '../components/common/Toast';
+import MenuCard, { FoodIcon } from '../components/order/MenuCard';
+import useTextToSpeech from '../hooks/useTextToSpeech';
+import useIdleTimer from '../hooks/useIdleTimer';
+import { getCartCount, useSessionStore } from '../stores/sessionStore';
+import formatPrice from '../utils/formatPrice';
+import menu from '../mocks/menu.json';
+import script from '../mocks/messages.json';
 import './MenuPage.css';
 
-// 메뉴 데이터 정의
-const menuData = {
-  coffee: [
-    { id: 1, name: '아메리카노', price: 3000, icon: '☕', hasTemp: true },
-    { id: 2, name: '아이스 아메리카노', price: 3000, icon: '🧊', hasTemp: false },
-    { id: 3, name: '카페라테', price: 3500, icon: '🥛', hasTemp: true },
-    { id: 4, name: '바닐라라테', price: 4000, icon: '🧋', hasTemp: true },
-  ],
-  drink: [
-    { id: 5, name: '초코우유', price: 3500, icon: '🍫', hasTemp: false },
-    { id: 6, name: '딸기우유', price: 3500, icon: '🍓', hasTemp: false },
-    { id: 7, name: '사과주스', price: 3000, icon: '🧃', hasTemp: false },
-  ],
-  dessert: [
-    { id: 8, name: '초코쿠키', price: 2000, icon: '🍪', hasTemp: false },
-    { id: 9, name: '크루아상', price: 3000, icon: '🥐', hasTemp: false },
-  ],
-};
-
+// 3. 눌러서 주문하기: 큰 사진 메뉴판 (어르신도 읽기 쉽게 글자를 크게)
 export default function MenuPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('coffee');
-  const [cartCount, setCartCount] = useState(0);
-  
-  // 모달 및 상세 옵션 상태 관리
-  const [selectedMenu, setSelectedMenu] = useState(null);
-  const [tempOption, setTempOption] = useState('아이스'); // '핫' 또는 '아이스'
-  const [sizeOption, setSizeOption] = useState('보통'); // '보통' 또는 '큰 사이즈'
-  const [iceOption, setIceOption] = useState('보통');     // '많이', '보통', '적게'
+    const navigate = useNavigate();
+    const cart = useSessionStore((s) => s.cart);
+    const addItem = useSessionStore((s) => s.addItem);
+    const setFrom = useSessionStore((s) => s.setFrom);
+    const callStaff = useSessionStore((s) => s.callStaff);
+    const { speak } = useTextToSpeech();
 
-  const handleOpenModal = (item) => {
-    setSelectedMenu(item);
-    // 초기 옵션 기본값 설정
-    setTempOption(item.name.includes('아이스') ? '아이스' : '핫');
-    setSizeOption('보통');
-    setIceOption('보통');
-  };
+    const [tab, setTab] = useState(menu.categories[0].id);
+    const [toast, setToast] = useState('');
+    const [sizeItem, setSizeItem] = useState(null); // 크기를 고를 메뉴
+    const [sheet, setSheet] = useState(null); // null | 'idle'
 
-  const handleAddToCart = () => {
-    let finalName = selectedMenu.name;
-    let addPrice = 0;
+    useEffect(() => {
+        setFrom('menu');
+    }, [setFrom]);
 
-    if (sizeOption === '큰 사이즈') {
-      finalName += ' (큰 사이즈)';
-      addPrice += 500;
-    }
-    if (selectedMenu.hasTemp || selectedMenu.name.includes('아이스')) {
-      finalName = `[${tempOption}] ` + finalName;
-      if (tempOption === '아이스') {
-        finalName += ` (얼음:${iceOption})`;
-      }
-    }
+    useIdleTimer(() => {
+        if (!sheet && !sizeItem) {
+            setSheet('idle');
+            speak(script.idle);
+        }
+    });
 
-    setCartCount(cartCount + 1);
-    setSelectedMenu(null);
-    alert(`"${finalName}"이(가) 장바구니에 담겼습니다!`);
-  };
+    const clearToast = useCallback(() => setToast(''), []);
+    const count = getCartCount(cart);
+    const items = menu.items.filter((item) => item.category === tab);
 
-  return (
-    <div className="menu-container">
-      <div className="layout-wrapper">
-        
-        {/* 모바일 화면 프레임 */}
-        <div className="mobile-frame">
-          
-          {/* 상단 헤더 */}
-          <div className="menu-header">
-            <button className="back-btn" onClick={() => navigate('/')}>&lt;</button>
-            <h2 className="menu-title">메뉴 고르기</h2>
-            <button className="back-btn" onClick={() => navigate('/voice')} style={{fontSize: '14px', color: '#2563eb'}}>말하기</button>
-          </div>
+    const added = (name, opt = '') => {
+        setToast(`${name} 담았어요`);
+        speak(`${name}${opt ? ` ${opt}` : ''} 담았어요`);
+    };
 
-          {/* 카테고리 탭 */}
-          <div className="category-tab-bar">
-            <button 
-              className={`category-btn ${activeTab === 'coffee' ? 'active' : ''}`}
-              onClick={() => setActiveTab('coffee')}
-            >
-              커피
-            </button>
-            <button 
-              className={`category-btn ${activeTab === 'drink' ? 'active' : ''}`}
-              onClick={() => setActiveTab('drink')}
-            >
-              음료
-            </button>
-            <button 
-              className={`category-btn ${activeTab === 'dessert' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dessert')}
-            >
-              빵·디저트
-            </button>
-          </div>
+    const onPick = (item) => {
+        if (item.sized) {
+            setSizeItem(item);
+            return;
+        }
+        addItem(item.id);
+        added(item.name);
+    };
 
-          {/* 메뉴 카드 목록 영역 */}
-          <div className="menu-grid-area">
-            {menuData[activeTab].map((item) => (
-              <div 
-                key={item.id} 
-                className="menu-card"
-                onClick={() => handleOpenModal(item)}
-              >
-                <div className="menu-img-box">{item.icon}</div>
-                <div className="menu-name">{item.name}</div>
-                <div className="menu-price">{item.price.toLocaleString()}원</div>
-              </div>
-            ))}
-          </div>
+    const onSize = (size) => {
+        addItem(sizeItem.id, size);
+        added(sizeItem.name, size);
+        setSizeItem(null);
+    };
 
-          {/* 하단 장바구니 버튼 */}
-          <div className="menu-footer">
-            <button 
-              className="view-cart-main-btn"
-              onClick={() => navigate('/confirm')}
-            >
-              담은 메뉴 보기 ({cartCount})
-            </button>
-          </div>
+    // 직원 부르기: 누르면 바로 매장 화면에 알림이 가요
+    const callNow = (reason) => {
+        callStaff(reason);
+        setSheet(null);
+        setToast(script.called);
+        speak(script.called);
+    };
 
-          {/* 상세 옵션 선택 팝업 모달 */}
-          {selectedMenu && (
-            <div className="modal-overlay">
-              <div className="modal-content-sheet">
-                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
-                  <div className="menu-img-box" style={{width: '60px', height: '60px', fontSize: '28px', margin: 0}}>
-                    {selectedMenu.icon}
-                  </div>
-                  <div>
-                    <h3 className="selected-item-title" style={{textAlign: 'left'}}>{selectedMenu.name}</h3>
-                    <div style={{fontSize: '15px', color: '#2563eb', fontWeight: '700'}}>
-                      기본 {selectedMenu.price.toLocaleString()}원
-                    </div>
-                  </div>
+    return (
+        <div className="stage">
+            <div className="phone menu-phone">
+                <Header
+                    title="메뉴 고르기"
+                    left={
+                        <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={() => navigate('/')}>
+                            <BackIcon />
+                        </button>
+                    }
+                    right={
+                        <button
+                            type="button"
+                            className="icon-btn icon-btn--blue"
+                            aria-label="말로 주문하기"
+                            onClick={() => navigate('/voice')}
+                        >
+                            <MicIcon size={22} />
+                        </button>
+                    }
+                />
+
+                <div className="menu-tabs" role="tablist">
+                    {menu.categories.map((c) => (
+                        <button
+                            key={c.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={tab === c.id}
+                            className={`menu-tab ${tab === c.id ? 'is-active' : ''}`}
+                            onClick={() => setTab(c.id)}
+                        >
+                            {c.label}
+                        </button>
+                    ))}
                 </div>
 
-                {/* 1. 온도 선택 (핫 / 아이스) - 커피류 등에 적용 */}
-                {selectedMenu.hasTemp && (
-                  <>
-                    <div className="option-section-title">온도 선택</div>
-                    <div className="option-btn-group">
-                      <button 
-                        className={`option-btn ${tempOption === '핫' ? 'selected' : ''}`}
-                        onClick={() => setTempOption('핫')}
-                      >
-                        🔥 따뜻하게 (핫)
-                      </button>
-                      <button 
-                        className={`option-btn ${tempOption === '아이스' ? 'selected' : ''}`}
-                        onClick={() => setTempOption('아이스')}
-                      >
-                        🧊 시원하게 (아이스)
-                      </button>
+                <main className="phone__body">
+                    <div className="menu-grid">
+                        {items.map((item) => (
+                            <MenuCard key={item.id} item={item} onClick={onPick} />
+                        ))}
                     </div>
-                  </>
-                )}
+                </main>
 
-                {/* 2. 사이즈 선택 (보통 / 큰 사이즈) */}
-                <div className="option-section-title">크기 선택</div>
-                <div className="option-btn-group">
-                  <button 
-                    className={`option-btn ${sizeOption === '보통' ? 'selected' : ''}`}
-                    onClick={() => setSizeOption('보통')}
-                  >
-                    보통 <span>기본</span>
-                  </button>
-                  <button 
-                    className={`option-btn ${sizeOption === '큰 사이즈' ? 'selected' : ''}`}
-                    onClick={() => setSizeOption('큰 사이즈')}
-                  >
-                    큰 사이즈 <span>+500원</span>
-                  </button>
+                <div className="phone__footer">
+                    <BigButton disabled={!count} onClick={() => navigate('/confirm')}>
+                        담은 메뉴 보기 ({count})
+                    </BigButton>
                 </div>
 
-                {/* 3. 아이스 선택 시 얼음 양 선택 (많이 / 보통 / 적게) */}
-                {(!selectedMenu.hasTemp || tempOption === '아이스') && (
-                  <>
-                    <div className="option-section-title">얼음 양 선택</div>
-                    <div className="option-btn-group">
-                      <button 
-                        className={`option-btn ${iceOption === '많이' ? 'selected' : ''}`}
-                        onClick={() => setIceOption('많이')}
-                      >
-                        많이
-                      </button>
-                      <button 
-                        className={`option-btn ${iceOption === '보통' ? 'selected' : ''}`}
-                        onClick={() => setIceOption('보통')}
-                      >
-                        보통
-                      </button>
-                      <button 
-                        className={`option-btn ${iceOption === '적게' ? 'selected' : ''}`}
-                        onClick={() => setIceOption('적게')}
-                      >
-                        적게
-                      </button>
-                    </div>
-                  </>
-                )}
+                <Toast message={toast} onDone={clearToast} />
 
-                {/* 하단 확인/닫기 버튼 */}
-                <div className="modal-action-row">
-                  <button className="modal-close-btn" onClick={() => setSelectedMenu(null)}>
-                    취소
-                  </button>
-                  <button className="modal-add-cart-btn" onClick={handleAddToCart}>
-                    담기 완료
-                  </button>
-                </div>
-              </div>
+                <BottomSheet open={!!sizeItem} label="크기 고르기">
+                    {sizeItem && (
+                        <>
+                            <FoodIcon icon={sizeItem.icon} size={72} />
+                            <h2 className="sheet__title">{sizeItem.name}</h2>
+                            <p className="sheet__desc">크기를 골라 주세요</p>
+                            <div className="menu-sizes">
+                                {menu.sizes.map((size) => (
+                                    <button
+                                        key={size.id}
+                                        type="button"
+                                        className="menu-size"
+                                        onClick={() => onSize(size.id)}
+                                    >
+                                        {size.label}
+                                        <span>{formatPrice(sizeItem.price + size.extra)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <BigButton variant="outline" onClick={() => setSizeItem(null)}>
+                                닫기
+                            </BigButton>
+                        </>
+                    )}
+                </BottomSheet>
+
+                <BottomSheet
+                    open={sheet === 'idle'}
+                    icon={<BellIcon />}
+                    title="도와드릴까요?"
+                    desc={script.idleDesc}
+                >
+                    <BigButton onClick={() => setSheet(null)}>계속할게요</BigButton>
+                    <BigButton variant="dark" onClick={() => callNow('오래 머무름')}>
+                        직원 부르기
+                    </BigButton>
+                </BottomSheet>
             </div>
-          )}
 
+            <aside className="demo-panel" aria-label="시연 버튼">
+                <p className="demo-panel__label">시연 버튼</p>
+                <div className="demo-panel__box">
+                    <h3>막혔을 때 보여주기</h3>
+                    <button
+                        type="button"
+                        className="demo-btn"
+                        onClick={() => {
+                            setSheet('idle');
+                            speak(script.idle);
+                        }}
+                    >
+                        30초 동안 가만히 있음
+                    </button>
+                </div>
+                <div className="demo-panel__box">
+                    <a className="demo-btn" href="/boss" target="_blank" rel="noreferrer">
+                        매장 화면 열기
+                    </a>
+                </div>
+            </aside>
         </div>
-
-      </div>
-    </div>
-  );
+    );
 }

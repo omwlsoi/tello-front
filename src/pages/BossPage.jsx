@@ -1,74 +1,143 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { BellIcon, MarkIcon } from '../components/common/Header';
+import Toast from '../components/common/Toast';
+import {
+    MODE_LABELS,
+    STATUS_LABELS,
+    useSessionStore,
+} from '../stores/sessionStore';
+import storeInfo from '../mocks/store.json';
 import './BossPage.css';
 
+const BUTTON = {
+    new: { label: '준비 시작', className: 'boss-card__btn--dark' },
+    prep: { label: '준비 완료', className: 'boss-card__btn--blue' },
+    ready: { label: '손님이 받아 갔어요', className: 'boss-card__btn--green' },
+};
+
+const ago = (createdAt, now) => {
+    const minutes = Math.floor((now - createdAt) / 60000);
+    return minutes < 1 ? '방금' : `${minutes}분 전`;
+};
+
+// 6. 매장 화면 (태블릿): 주문과 직원 호출을 실시간으로 받아요.
 export default function BossPage() {
-  // 사장님 창에서 관리하는 주문 리스트 상태 (실제 연동 시 백엔드 DB와 연동됨)
-  const [orders, setOrders] = useState([
-    { id: 27, menu: '아이스 아메리카노, 초코우유', time: '방금 전', status: 1 }, // 1: 주문 완료, 2: 만드는 중, 3: 다 됐어요
-  ]);
+    const orders = useSessionStore((s) => s.orders);
+    const calls = useSessionStore((s) => s.calls);
+    const advanceOrder = useSessionStore((s) => s.advanceOrder);
+    const ackCall = useSessionStore((s) => s.ackCall);
+    const resetDemo = useSessionStore((s) => s.resetDemo);
 
-  const handleStatusChange = (id, newStatus) => {
-    setOrders(orders.map(order => 
-      order.id === id ? { ...order, status: newStatus } : order
-    ));
-    
-    // (참고) 실제 백엔드 연동 시 이 함수 안에서 서버로 PATCH 요청을 보냄
-    // 예: axios.patch(`/api/orders/${id}/status`, { status: newStatus });
-  };
+    const [now, setNow] = useState(() => Date.now());
+    const [toast, setToast] = useState('');
+    const clearToast = useCallback(() => setToast(''), []);
 
-  return (
-    <div className="boss-container">
-      <div className="boss-frame">
-        {/* 상단 헤더 */}
-        <div className="boss-header">
-          <h2>👨‍🍳 덕성카페 사장님 관리 뷰</h2>
-          <span className="live-badge">실시간 연동중</span>
-        </div>
+    // "N분 전" 갱신
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), 30000);
+        return () => clearInterval(timer);
+    }, []);
 
-        {/* 주문 목록 카드 영역 */}
-        <div className="boss-body">
-          {orders.map(order => (
-            <div key={order.id} className={`order-card ${order.status > 1 ? 'active' : ''}`}>
-              <div className="order-top-row">
-                <span className="order-num">주문 번호 No. {order.id}</span>
-                <span className="order-time">{order.time}</span>
-              </div>
-              <div className="order-menu-list">
-                📦 {order.menu}
-              </div>
+    const nNew = orders.filter((o) => o.status === 'new').length;
+    const nPrep = orders.filter((o) => o.status === 'prep').length;
 
-              <div className="status-action-group">
-                <span className="action-label">주문 상태 변경 (클릭 시 손님 화면에 즉시 반영)</span>
-                <div className="btn-grid">
-                  <button 
-                    className={`status-ctrl-btn ${order.status === 1 ? 'active-blue' : ''}`}
-                    onClick={() => handleStatusChange(order.id, 1)}
-                  >
-                    주문 완료
-                  </button>
-                  <button 
-                    className={`status-ctrl-btn ${order.status === 2 ? 'active-orange' : ''}`}
-                    onClick={() => handleStatusChange(order.id, 2)}
-                  >
-                    만드는 중
-                  </button>
-                  <button 
-                    className={`status-ctrl-btn ${order.status === 3 ? 'active-green' : ''}`}
-                    onClick={() => handleStatusChange(order.id, 3)}
-                  >
-                    다 됐어요
-                  </button>
-                </div>
-              </div>
+    return (
+        <div className="boss-stage">
+            <div className="boss-tools">
+                <a className="demo-btn" href="/" target="_blank" rel="noreferrer">
+                    손님 화면 열기
+                </a>
+                <button type="button" className="demo-btn" onClick={resetDemo}>
+                    시연 처음부터
+                </button>
             </div>
-          ))}
-        </div>
 
-        {/* 하단 안내 */}
-        <div className="boss-footer">
-          카페 덕성 관리자 시스템 v1.0
+            <div className="boss-tablet">
+                <header className="boss-header">
+                    <span className="boss-header__title">
+                        {storeInfo.name} 주문 현황
+                        <span className="boss-header__badge">MVP 가상 화면 · POS 미연동</span>
+                    </span>
+                    <span className="boss-header__count">
+                        새 주문 {nNew} · 준비 중 {nPrep}
+                    </span>
+                </header>
+
+                {calls.length > 0 && (
+                    <div className="boss-calls">
+                        {calls.map((call) => (
+                            <div key={call.id} className="boss-call" role="alert">
+                                <span className="boss-call__text">
+                                    <BellIcon size={24} />
+                                    직원 호출 —{' '}
+                                    {call.orderNo ? `${call.orderNo}번 손님이` : '주문 중인 손님이'} 도움을
+                                    요청했어요
+                                    <span className="boss-call__reason">이유: {call.reason}</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        ackCall(call.id);
+                                        setToast('직원이 가고 있어요');
+                                    }}
+                                >
+                                    확인했어요
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="boss-grid">
+                    {orders.length === 0 && (
+                        <p className="boss-empty">
+                            아직 주문이 없어요. 손님 폰에서 주문하면 여기에 떠요.
+                        </p>
+                    )}
+                    {orders.map((order) => {
+                        const voice = order.mode === 'voice';
+                        return (
+                            <article
+                                key={order.no}
+                                className={`boss-card ${order.status === 'new' ? 'is-new' : ''} ${order.status === 'ready' ? 'is-ready' : ''}`}
+                            >
+                                <div className="boss-card__top">
+                                    <span className="boss-card__no">
+                                        {order.no}
+                                        <MarkIcon mark={order.mark} size={28} />
+                                    </span>
+                                    <span className="boss-card__time">
+                                        {order.sample && <span className="boss-card__sample">예시</span>}
+                                        {ago(order.createdAt, now)}
+                                    </span>
+                                </div>
+                                <span className={`boss-card__tag ${voice ? 'is-voice' : ''}`}>
+                                    {MODE_LABELS[order.mode]}
+                                </span>
+                                <div className="boss-card__items">
+                                    {order.items.map((it, i) => (
+                                        <div key={i}>
+                                            {it.name} ×{it.qty}
+                                            {it.opt ? ` · ${it.opt}` : ''}
+                                        </div>
+                                    ))}
+                                </div>
+                                {voice && <div className="boss-card__hint">번호를 크게 불러주세요</div>}
+                                <span className="boss-card__state">{STATUS_LABELS[order.status]}</span>
+                                <button
+                                    type="button"
+                                    className={`boss-card__btn ${BUTTON[order.status].className}`}
+                                    onClick={() => advanceOrder(order.no)}
+                                >
+                                    {BUTTON[order.status].label}
+                                </button>
+                            </article>
+                        );
+                    })}
+                </div>
+
+                <Toast message={toast} onDone={clearToast} />
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
