@@ -4,19 +4,40 @@
         { "id": "drink", "label": "음료" },
         { "id": "dessert", "label": "빵·디저트" }
     ],
-    "sizes": [
-        { "id": "보통", "label": "보통", "extra": 0 },
-        { "id": "큰 사이즈", "label": "큰 사이즈", "extra": 500 }
-    ],
+    "options": {
+        "size": {
+            "label": "크기",
+            "default": "regular",
+            "choices": [
+                { "id": "regular", "label": "보통", "extra": 0 },
+                { "id": "large", "label": "큰 사이즈", "extra": 500 }
+            ]
+        },
+        "temperature": {
+            "label": "온도",
+            "choices": [
+                { "id": "hot", "label": "핫" },
+                { "id": "ice", "label": "아이스" }
+            ]
+        },
+        "ice": {
+            "label": "얼음",
+            "default": "regular",
+            "choices": [
+                { "id": "less", "label": "적게" },
+                { "id": "regular", "label": "보통" },
+                { "id": "more", "label": "많이" }
+            ]
+        }
+    },
     "items": [
-        { "id": "ame", "category": "coffee", "name": "아메리카노", "price": 3000, "icon": "hot", "sized": true, "aliases": ["뜨아", "따뜻한 커피"] },
-        { "id": "iame", "category": "coffee", "name": "아이스 아메리카노", "price": 3000, "icon": "ice", "sized": true, "aliases": ["아아", "차가운 커피"] },
-        { "id": "latte", "category": "coffee", "name": "카페라떼", "price": 3500, "icon": "latte", "sized": true, "aliases": ["라떼"] },
-        { "id": "vlatte", "category": "coffee", "name": "바닐라라떼", "price": 4000, "icon": "latte", "sized": true, "aliases": ["바라", "달달한 커피"] },
-        { "id": "choco", "category": "drink", "name": "초코우유", "price": 3500, "icon": "choco", "sized": false, "aliases": ["초코"] },
-        { "id": "straw", "category": "drink", "name": "딸기우유", "price": 3500, "icon": "straw", "sized": false, "aliases": ["딸기"] },
-        { "id": "apple", "category": "drink", "name": "사과주스", "price": 3000, "icon": "juice", "sized": false, "aliases": ["주스"] },
-        { "id": "cookie", "category": "dessert", "name": "초코쿠키", "price": 2000, "icon": "cookie", "sized": false, "aliases": ["쿠키"] },
-        { "id": "crois", "category": "dessert", "name": "크루아상", "price": 3000, "icon": "bread", "sized": false, "aliases": ["빵"] }
+        { "id": "americano", "category": "coffee", "name": "아메리카노", "price": 3000, "icon": "hot", "iceIcon": "ice", "options": ["size", "temperature", "ice"], "aliases": ["아아", "뜨아", "커피"] },
+        { "id": "cafe_latte", "category": "coffee", "name": "카페라떼", "price": 3500, "icon": "latte", "options": ["size", "temperature", "ice"], "aliases": ["라떼"] },
+        { "id": "vanilla_latte", "category": "coffee", "name": "바닐라라떼", "price": 4000, "icon": "latte", "options": ["size", "temperature", "ice"], "aliases": ["바라", "달달한 커피"] },
+        { "id": "choco_milk", "category": "drink", "name": "초코우유", "price": 3500, "icon": "choco", "options": ["size", "temperature", "ice"], "aliases": ["초코"] },
+        { "id": "strawberry_milk", "category": "drink", "name": "딸기우유", "price": 3500, "icon": "straw", "options": ["size", "temperature", "ice"], "aliases": ["딸기"] },
+        { "id": "apple_juice", "category": "drink", "name": "사과주스", "price": 3000, "icon": "juice", "options": ["size", "temperature", "ice"], "aliases": ["주스"] },
+        { "id": "choco_cookie", "category": "dessert", "name": "초코쿠키", "price": 2000, "icon": "cookie", "options": [], "aliases": ["쿠키"] },
+        { "id": "croissant", "category": "dessert", "name": "크루아상", "price": 3000, "icon": "bread", "options": [], "aliases": ["빵"] }
     ]
 }

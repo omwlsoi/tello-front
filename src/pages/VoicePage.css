@@ -17,6 +17,10 @@
     max-width: 88%;
     align-self: flex-start;
 }
+/* 버튼이 있는 말풍선은 넓게 (버튼이 작아지지 않게) */
+.voice-msg:has(.voice-choices) {
+    width: 88%;
+}
 .voice-msg--me {
     align-self: flex-end;
     align-items: flex-end;
@@ -71,12 +75,53 @@
     justify-content: center;
     text-align: center;
 }
+.voice-choices--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 .voice-choice:disabled {
     opacity: 0.45;
     cursor: default;
 }
 .voice-choice--full {
     grid-column: 1 / -1;
+}
+
+/* 담은 메뉴 카드 (그림 + 이름·옵션·가격, 가로) */
+.voice-card {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--white);
+}
+.voice-card__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.voice-card__name {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+.voice-card__opt {
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--sub);
+    word-break: keep-all;
+}
+.voice-card__price {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-2);
+}
+.voice-followup {
+    margin: 12px 0 0;
 }
 
 /* 첫 인사: 사용 방법 */

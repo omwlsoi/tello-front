@@ -14,10 +14,51 @@ export const STATUS_LABELS = orderMock.statusLabels;
 
 const NEXT_STATUS = { new: 'prep', prep: 'ready', ready: 'gone' };
 
+export const OPTIONS = menu.options;
+// 옵션을 묻는 순서: 크기 → 온도 → 얼음
+const OPTION_ORDER = ['size', 'temperature', 'ice'];
+
 export const findItem = (id) => menu.items.find((item) => item.id === id);
 
+export const getChoiceLabel = (key, id) =>
+    OPTIONS[key]?.choices.find((c) => c.id === id)?.label ?? '';
+
+// 이 메뉴에서 다음에 물어볼 옵션 (얼음은 아이스일 때만). 다 골랐으면 null
+export const nextOption = (item, picked = {}) =>
+    OPTION_ORDER.find(
+        (key) =>
+            item.options?.includes(key) &&
+            picked[key] == null &&
+            (key !== 'ice' || picked.temperature === 'ice'),
+    ) ?? null;
+
+// { size: 'large', temperature: 'ice', ice: 'less' } → "아이스 · 큰 사이즈 · 얼음 적게"
+export const getOptionLabel = (options = {}) =>
+    [
+        options.temperature && getChoiceLabel('temperature', options.temperature),
+        options.size && getChoiceLabel('size', options.size),
+        options.ice && `얼음 ${getChoiceLabel('ice', options.ice)}`,
+    ]
+        .filter(Boolean)
+        .join(' · ');
+
+// 아이스를 고르면 아이스 그림이 있는 메뉴는 그림도 바꿔요
+export const getItemIcon = (item, options = {}) =>
+    options.temperature === 'ice' && item.iceIcon ? item.iceIcon : item.icon;
+
 const sizeExtra = (size) =>
-    menu.sizes.find((s) => s.id === size)?.extra ?? 0;
+    OPTIONS.size.choices.find((c) => c.id === size)?.extra ?? 0;
+
+// 메뉴에 없는 옵션은 빼고 저장 (DB 필드: size / temperature / ice)
+const cleanOptions = (item, options = {}) =>
+    Object.fromEntries(
+        OPTION_ORDER.filter(
+            (key) =>
+                item.options?.includes(key) &&
+                options[key] != null &&
+                (key !== 'ice' || options.temperature === 'ice'),
+        ).map((key) => [key, options[key]]),
+    );
 
 export const getCartCount = (cart) =>
     cart.reduce((sum, line) => sum + line.qty, 0);
@@ -75,11 +116,13 @@ export const useSessionStore = create(
             toggleSound: () => set((s) => ({ soundOn: !s.soundOn })),
 
             // ---------- 담은 메뉴 ----------
-            addItem: (id, opt = '') =>
+            // options: { size, temperature, ice } — 옵션 없는 메뉴는 생략
+            addItem: (id, options = {}) =>
                 set((s) => {
                     const item = findItem(id);
                     if (!item) return {};
-                    const key = `${id}|${opt}`;
+                    const picked = cleanOptions(item, options);
+                    const key = [id, ...OPTION_ORDER.map((k) => picked[k] ?? '')].join('|');
                     const exists = s.cart.find((line) => line.key === key);
                     if (exists) {
                         return {
@@ -97,9 +140,10 @@ export const useSessionStore = create(
                                 key,
                                 id,
                                 name: item.name,
-                                opt,
-                                icon: item.icon,
-                                price: item.price + sizeExtra(opt),
+                                options: picked,
+                                opt: getOptionLabel(picked),
+                                icon: getItemIcon(item, picked),
+                                price: item.price + sizeExtra(picked.size),
                                 qty: 1,
                             },
                         ],
@@ -137,10 +181,13 @@ export const useSessionStore = create(
                     no,
                     mark: markFor(no),
                     mode: s.from === 'voice' ? 'voice' : 'touch',
+                    // 백엔드로 보낼 때: menuId + size / temperature / ice
                     items: s.cart.map((line) => ({
+                        menuId: line.id,
                         name: line.name,
                         qty: line.qty,
                         opt: line.opt,
+                        ...line.options,
                     })),
                     status: 'new',
                     createdAt: Date.now(),
@@ -189,6 +236,9 @@ export const useSessionStore = create(
         {
             name: STORAGE_KEY,
             storage: createJSONStorage(safeStorage),
+            // 메뉴 DB 구조가 바뀌면 version 을 올려서 예전 장바구니를 비워요
+            version: 2,
+            migrate: () => initialState(),
         },
     ),
 );

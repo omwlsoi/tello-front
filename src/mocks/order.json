@@ -20,7 +20,7 @@
             "no": 26,
             "markIndex": 1,
             "mode": "touch",
-            "items": [{ "name": "초코우유", "qty": 2, "opt": "" }],
+            "items": [{ "menuId": "choco_milk", "name": "초코우유", "qty": 2, "opt": "아이스 · 보통 · 얼음 보통", "size": "regular", "temperature": "ice", "ice": "regular" }],
             "status": "new",
             "minutesAgo": 1
         },
@@ -28,7 +28,7 @@
             "no": 25,
             "markIndex": 3,
             "mode": "touch",
-            "items": [{ "name": "크루아상", "qty": 1, "opt": "" }],
+            "items": [{ "menuId": "croissant", "name": "크루아상", "qty": 1, "opt": "" }],
             "status": "prep",
             "minutesAgo": 4
         }

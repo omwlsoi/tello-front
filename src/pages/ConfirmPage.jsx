@@ -80,34 +80,43 @@ export default function ConfirmPage() {
                         <p className="screen-desc">담은 메뉴가 없어요. 메뉴를 먼저 골라 주세요.</p>
                     )}
 
+                    {/* 메뉴 하나 = 카드 하나: 1줄 그림·이름·금액 / 2줄 옵션 / 3줄 수량 */}
                     {cart.map((line) => (
                         <div key={line.key} className="confirm-row">
-                            <FoodTile icon={line.icon} />
-                            <span className="confirm-row__text">
-                                <b>{line.name}</b>
-                                <span>
-                                    {line.opt || '기본'} · {formatPrice(line.price)}
+                            <div className="confirm-row__main">
+                                <FoodTile icon={line.icon} />
+                                <span className="confirm-row__text">
+                                    <span className="confirm-row__head">
+                                        <b>{line.name}</b>
+                                        <span className="confirm-row__price">
+                                            {formatPrice(line.price * line.qty)}
+                                        </span>
+                                    </span>
+                                    <span className="confirm-row__opt">{line.opt || '기본'}</span>
                                 </span>
-                            </span>
-                            <span className="confirm-qty">
-                                <button
-                                    type="button"
-                                    className="confirm-qty__btn"
-                                    aria-label={`${line.name} 하나 빼기`}
-                                    onClick={() => changeQty(line.key, -1)}
-                                >
-                                    −
-                                </button>
-                                <span className="confirm-qty__num">{line.qty}</span>
-                                <button
-                                    type="button"
-                                    className="confirm-qty__btn"
-                                    aria-label={`${line.name} 하나 더`}
-                                    onClick={() => changeQty(line.key, 1)}
-                                >
-                                    +
-                                </button>
-                            </span>
+                            </div>
+                            <div className="confirm-row__qty">
+                                <span className="confirm-row__qty-label">수량</span>
+                                <span className="confirm-qty">
+                                    <button
+                                        type="button"
+                                        className="confirm-qty__btn"
+                                        aria-label={`${line.name} 하나 빼기`}
+                                        onClick={() => changeQty(line.key, -1)}
+                                    >
+                                        −
+                                    </button>
+                                    <span className="confirm-qty__num">{line.qty}</span>
+                                    <button
+                                        type="button"
+                                        className="confirm-qty__btn"
+                                        aria-label={`${line.name} 하나 더`}
+                                        onClick={() => changeQty(line.key, 1)}
+                                    >
+                                        +
+                                    </button>
+                                </span>
+                            </div>
                         </div>
                     ))}
 

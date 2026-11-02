@@ -7,7 +7,14 @@ import Toast from '../components/common/Toast';
 import MenuCard, { FoodIcon } from '../components/order/MenuCard';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import useIdleTimer from '../hooks/useIdleTimer';
-import { getCartCount, useSessionStore } from '../stores/sessionStore';
+import {
+    OPTIONS,
+    getCartCount,
+    getItemIcon,
+    getOptionLabel,
+    nextOption,
+    useSessionStore,
+} from '../stores/sessionStore';
 import formatPrice from '../utils/formatPrice';
 import menu from '../mocks/menu.json';
 import script from '../mocks/messages.json';
@@ -24,7 +31,7 @@ export default function MenuPage() {
 
     const [tab, setTab] = useState(menu.categories[0].id);
     const [toast, setToast] = useState('');
-    const [sizeItem, setSizeItem] = useState(null); // 크기를 고를 메뉴
+    const [optionPick, setOptionPick] = useState(null); // { item, picked } 옵션 고르는 중인 메뉴
     const [sheet, setSheet] = useState(null); // null | 'idle'
 
     useEffect(() => {
@@ -32,7 +39,7 @@ export default function MenuPage() {
     }, [setFrom]);
 
     useIdleTimer(() => {
-        if (!sheet && !sizeItem) {
+        if (!sheet && !optionPick) {
             setSheet('idle');
             speak(script.idle);
         }
@@ -48,19 +55,41 @@ export default function MenuPage() {
     };
 
     const onPick = (item) => {
-        if (item.sized) {
-            setSizeItem(item);
+        if (nextOption(item)) {
+            // 기본값: 크기 보통 (온도는 손님이 직접 골라요)
+            const picked = item.options.includes('size') ? { size: OPTIONS.size.default } : {};
+            setOptionPick({ item, picked });
             return;
         }
         addItem(item.id);
         added(item.name);
     };
 
-    const onSize = (size) => {
-        addItem(sizeItem.id, size);
-        added(sizeItem.name, size);
-        setSizeItem(null);
+    // 크기·온도·얼음을 한 화면에서 고르고 [담기]
+    const onOption = (key, value) =>
+        setOptionPick((prev) => {
+            const picked = { ...prev.picked, [key]: value };
+            if (key === 'temperature') {
+                if (value === 'ice') picked.ice = prev.picked.ice ?? OPTIONS.ice.default; // 아이스면 얼음 보통
+                else delete picked.ice; // 핫이면 얼음 없음
+            }
+            return { ...prev, picked };
+        });
+
+    const onAddWithOptions = () => {
+        const { item, picked } = optionPick;
+        addItem(item.id, picked);
+        added(item.name, getOptionLabel(picked));
+        setOptionPick(null);
     };
+
+    // 지금 보여줄 옵션 묶음 (얼음은 아이스를 골랐을 때만)
+    const optionKeys = optionPick
+        ? optionPick.item.options.filter(
+              (key) => key !== 'ice' || optionPick.picked.temperature === 'ice',
+          )
+        : [];
+    const optionsDone = optionPick ? !nextOption(optionPick.item, optionPick.picked) : false;
 
     // 직원 부르기: 누르면 바로 매장 화면에 알림이 가요
     const callNow = (reason) => {
@@ -123,29 +152,48 @@ export default function MenuPage() {
 
                 <Toast message={toast} onDone={clearToast} />
 
-                <BottomSheet open={!!sizeItem} label="크기 고르기">
-                    {sizeItem && (
-                        <>
-                            <FoodIcon icon={sizeItem.icon} size={72} />
-                            <h2 className="sheet__title">{sizeItem.name}</h2>
-                            <p className="sheet__desc">크기를 골라 주세요</p>
-                            <div className="menu-sizes">
-                                {menu.sizes.map((size) => (
-                                    <button
-                                        key={size.id}
-                                        type="button"
-                                        className="menu-size"
-                                        onClick={() => onSize(size.id)}
-                                    >
-                                        {size.label}
-                                        <span>{formatPrice(sizeItem.price + size.extra)}</span>
-                                    </button>
-                                ))}
+                <BottomSheet open={!!optionPick} label="옵션 고르기">
+                    {optionPick && (
+                        <div className="menu-options">
+                            <div className="menu-options__head">
+                                <FoodIcon icon={getItemIcon(optionPick.item, optionPick.picked)} size={56} />
+                                <h2 className="sheet__title">{optionPick.item.name}</h2>
                             </div>
-                            <BigButton variant="outline" onClick={() => setSizeItem(null)}>
+
+                            {optionKeys.map((key) => (
+                                <div key={key} className="menu-opt" role="group" aria-label={OPTIONS[key].label}>
+                                    <span className="menu-opt__label">{OPTIONS[key].label}</span>
+                                    <div
+                                        className={`menu-sizes ${OPTIONS[key].choices.length > 2 ? 'menu-sizes--three' : ''}`}
+                                    >
+                                        {OPTIONS[key].choices.map((choice) => {
+                                            const on = optionPick.picked[key] === choice.id;
+                                            return (
+                                                <button
+                                                    key={choice.id}
+                                                    type="button"
+                                                    aria-pressed={on}
+                                                    className={`menu-size ${on ? 'is-selected' : ''}`}
+                                                    onClick={() => onOption(key, choice.id)}
+                                                >
+                                                    {choice.label}
+                                                    {key === 'size' && (
+                                                        <span>{formatPrice(optionPick.item.price + choice.extra)}</span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+
+                            <BigButton disabled={!optionsDone} onClick={onAddWithOptions}>
+                                {optionsDone ? '담기' : '온도를 골라 주세요'}
+                            </BigButton>
+                            <BigButton variant="outline" onClick={() => setOptionPick(null)}>
                                 닫기
                             </BigButton>
-                        </>
+                        </div>
                     )}
                 </BottomSheet>
 

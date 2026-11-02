@@ -1,25 +1,57 @@
 /* 4. 주문 확인 */
 .confirm-row {
     display: flex;
-    gap: 12px;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
     padding: 12px;
     border: 1.5px solid var(--line);
     border-radius: var(--radius-md);
+}
+.confirm-row__main {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 .confirm-row__text {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
 }
-.confirm-row__text b {
+.confirm-row__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+.confirm-row__head b {
+    font-size: 19px;
+    line-height: 1.3;
+}
+.confirm-row__price {
     font-size: 17px;
+    font-weight: 700;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
-.confirm-row__text span {
-    font-size: 14px;
+.confirm-row__opt {
+    font-size: 16px;
+    line-height: 1.4;
     color: var(--sub);
+    word-break: keep-all; /* "얼음 적게"가 중간에서 끊기지 않게 */
+}
+.confirm-row__qty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+}
+.confirm-row__qty-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink-2);
 }
 
 .confirm-qty {

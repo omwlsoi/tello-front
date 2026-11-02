@@ -3,31 +3,44 @@
     "guide": [
         "아래 파란 마이크 버튼을 눌러요",
         "\"아이스 아메리카노 하나\"처럼 드실 메뉴를 말해요",
-        "크기처럼 고를 게 있으면 버튼으로 골라요"
+        "크기·온도·얼음은 버튼으로 골라요"
     ],
     "guideTip": "말이 어려우면 위의 [메뉴판]을 눌러 사진으로 골라도 돼요.",
     "steps": [
         {
             "user": "아아 하나 줘요",
-            "ai": "아이스 아메리카노 1잔이요. 크기를 골라 주세요.",
-            "ask": "size",
-            "itemId": "iame"
+            "ai": "아이스 아메리카노 1잔이요.",
+            "itemId": "americano",
+            "preset": {
+                "temperature": "ice"
+            }
         },
         {
-            "user": "초코우유도 하나 줘요",
-            "itemId": "choco"
+            "user": "따뜻한 초코우유도 하나 줘요",
+            "ai": "따뜻한 초코우유 1잔이요.",
+            "itemId": "choco_milk",
+            "preset": {
+                "temperature": "hot"
+            }
         },
         {
             "user": "크루아상 하나요",
-            "itemId": "crois"
+            "itemId": "croissant"
         },
         {
             "user": "음…",
             "ai": "드실 메뉴 이름을 말해 주세요."
         }
     ],
+    "ask": {
+        "size": "크기를 골라 주세요.",
+        "temperature": "따뜻하게 드릴까요, 차갑게 드릴까요?",
+        "ice": "얼음은 얼마나 넣을까요?"
+    },
     "added": "{name} 1개를 담았어요. 더 필요한 게 있나요?",
-    "addedSized": "{name} {size} 1잔을 담았어요. 더 필요한 게 있나요?",
+    "addedOpt": "{name} {opt} 1개를 담았어요. 더 필요한 게 있나요?",
+    "addedLead": "이렇게 담았어요.",
+    "addedAsk": "더 필요한 게 있나요?",
     "pickButton": "아래 버튼으로 골라 주세요.",
     "moreYes": "네, 더 드실 메뉴를 말해 주세요.",
     "moreNo": "좋아요. 주문 내용을 확인할게요.",

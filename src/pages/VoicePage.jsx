@@ -5,11 +5,19 @@ import BigButton from '../components/common/BigButton';
 import BottomSheet from '../components/common/BottomSheet';
 import Toast from '../components/common/Toast';
 import CartBar from '../components/order/CartBar';
+import { FoodTile } from '../components/order/MenuCard';
 import useSpeechToText from '../hooks/useSpeechToText';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import useIdleTimer from '../hooks/useIdleTimer';
-import { findItem, useSessionStore } from '../stores/sessionStore';
-import menu from '../mocks/menu.json';
+import formatPrice from '../utils/formatPrice';
+import {
+    OPTIONS,
+    findItem,
+    getItemIcon,
+    getOptionLabel,
+    nextOption,
+    useSessionStore,
+} from '../stores/sessionStore';
 import script from '../mocks/messages.json';
 import './VoicePage.css';
 
@@ -20,10 +28,13 @@ const MORE_CHOICES = [
 ];
 
 // 버튼으로 답해야 하는 질문 (이때는 마이크 대신 버튼을 눌러야 해요)
-const BUTTON_ASKS = ['size', 'more'];
+const BUTTON_ASKS = ['option', 'more'];
+
+const fill = (text, values) =>
+    Object.entries(values).reduce((out, [k, v]) => out.replace(`{${k}}`, v), text);
 
 // 2. 말로 주문하기
-// 메뉴 주문만 말로 받고, 크기·추가 여부 같은 나머지는 버튼으로 골라요.
+// 메뉴 주문만 말로 받고, 크기·온도·얼음·추가 여부는 버튼으로 골라요.
 // 마이크를 누를 때마다 대본(messages.json)대로 대화가 한 단계씩 진행돼요.
 export default function VoicePage() {
     const navigate = useNavigate();
@@ -53,9 +64,43 @@ export default function VoicePage() {
     );
     const me = useCallback((text, extra = {}) => pushMessage({ who: 'me', text, ...extra }), [pushMessage]);
 
+    // 담은 메뉴를 그림 카드로 보여주고 "더 필요한 게 있나요?" (말은 메뉴 이름까지 읽어줘요)
     const askMore = useCallback(
-        (text) => ai(text, { ask: 'more', choices: MORE_CHOICES }),
+        (spoken, card) =>
+            ai(script.addedLead, { ask: 'more', card, followUp: script.addedAsk, choices: MORE_CHOICES }, spoken),
         [ai],
+    );
+
+    // 옵션을 하나씩 버튼으로 물어보고, 다 고르면 담아요
+    const askOption = useCallback(
+        (item, picked, lead = '') => {
+            const key = nextOption(item, picked);
+            if (!key) {
+                addItem(item.id, picked);
+                const opt = getOptionLabel(picked);
+                const extra = OPTIONS.size.choices.find((c) => c.id === picked.size)?.extra ?? 0;
+                askMore(fill(opt ? script.addedOpt : script.added, { name: item.name, opt }), {
+                    icon: getItemIcon(item, picked),
+                    name: item.name,
+                    opt,
+                    price: item.price + extra,
+                });
+                return;
+            }
+            ai(lead ? `${lead} ${script.ask[key]}` : script.ask[key], {
+                ask: 'option',
+                option: key,
+                itemId: item.id,
+                picked,
+                choices: OPTIONS[key].choices.map((c) => ({
+                    action: 'option',
+                    value: c.id,
+                    said: c.label,
+                    label: c.extra ? `${c.label} (+${c.extra}원)` : c.label,
+                })),
+            });
+        },
+        [addItem, ai, askMore],
     );
 
     // 첫 인사 + 사용 방법 안내
@@ -108,20 +153,9 @@ export default function VoicePage() {
             me(step.user);
             setFailCount(0);
 
-            if (step.ask === 'size') {
-                ai(step.ai, {
-                    ask: 'size',
-                    itemId: step.itemId,
-                    choices: menu.sizes.map((size) => ({
-                        action: 'size',
-                        value: size.id,
-                        label: size.extra ? `${size.label} (+${size.extra}원)` : size.label,
-                    })),
-                });
-            } else if (step.itemId) {
-                const item = findItem(step.itemId);
-                addItem(step.itemId);
-                askMore(script.added.replace('{name}', item.name));
+            if (step.itemId) {
+                // 말에서 알아들은 옵션(preset, 예: "아아" → 아이스)은 건너뛰고 나머지만 물어봐요
+                askOption(findItem(step.itemId), step.preset ?? {}, step.ai);
             } else {
                 ai(step.ai);
             }
@@ -149,15 +183,12 @@ export default function VoicePage() {
     };
 
     const onChoice = (message, choice) => {
-        if (choice.action === 'size') {
-            const item = findItem(message.itemId);
-            addItem(message.itemId, choice.value);
-            me(choice.value);
-            askMore(
-                script.addedSized
-                    .replace('{name}', item.name)
-                    .replace('{size}', choice.value),
-            );
+        if (choice.action === 'option') {
+            me(choice.said);
+            askOption(findItem(message.itemId), {
+                ...message.picked,
+                [message.option]: choice.value,
+            });
         } else if (choice.action === 'more') {
             // 네 → 바로 다음 메뉴를 말로 받아요
             me(choice.label);
@@ -228,8 +259,19 @@ export default function VoicePage() {
                                             {m.guideTip && <p className="voice-guide__tip">{m.guideTip}</p>}
                                         </>
                                     )}
+                                    {m.card && (
+                                        <div className="voice-card">
+                                            <FoodTile icon={m.card.icon} size={64} iconSize={44} />
+                                            <span className="voice-card__text">
+                                                <b className="voice-card__name">{m.card.name}</b>
+                                                {m.card.opt && <span className="voice-card__opt">{m.card.opt}</span>}
+                                                <span className="voice-card__price">{formatPrice(m.card.price)}</span>
+                                            </span>
+                                        </div>
+                                    )}
+                                    {m.followUp && <p className="voice-followup">{m.followUp}</p>}
                                     {m.choices && (
-                                        <div className="voice-choices">
+                                        <div className={`voice-choices ${m.choices.length === 3 && !m.choices.some((c) => c.full) ? 'voice-choices--three' : ''}`}>
                                             {m.choices.map((c) => (
                                                 <button
                                                     key={c.label}
