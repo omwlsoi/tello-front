@@ -1,10 +1,10 @@
 {
     "firstNo": 27,
     "marks": [
-        { "name": "노란 별", "shape": "star", "color": "#F5B700" },
+        { "name": "노란 별", "shape": "star", "color": "#F6C844" },
         { "name": "초록 동그라미", "shape": "circle", "color": "#2E9E4F" },
         { "name": "빨간 하트", "shape": "heart", "color": "#E04848" },
-        { "name": "파란 세모", "shape": "tri", "color": "#2B5BD7" }
+        { "name": "파란 세모", "shape": "tri", "color": "#1F3FD1" }
     ],
     "modes": {
         "voice": "말로 주문",

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header, { BackIcon, BellIcon } from '../components/common/Header';
+import { BackIcon, CheckCircleIcon, InfoIcon, Tello } from '../components/common/Header';
 import BigButton from '../components/common/BigButton';
 import BottomSheet from '../components/common/BottomSheet';
 import Toast from '../components/common/Toast';
@@ -64,17 +64,18 @@ export default function ConfirmPage() {
     return (
         <div className="stage">
             <div className="phone">
-                <Header
-                    title="주문 확인"
-                    left={
-                        <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={() => navigate(backTo)}>
-                            <BackIcon />
-                        </button>
-                    }
-                />
+                <header className="confirm-header">
+                    <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={() => navigate(backTo)}>
+                        <BackIcon />
+                    </button>
+                    <span className="app-header__title">
+                        주문 확인
+                        <CheckCircleIcon />
+                    </span>
+                </header>
 
                 <main className="phone__body">
-                    <h1 className="screen-title">이렇게 주문할까요?</h1>
+                    <h1 className="screen-title confirm-title">이렇게 주문할까요?</h1>
 
                     {cart.length === 0 && (
                         <p className="screen-desc">담은 메뉴가 없어요. 메뉴를 먼저 골라 주세요.</p>
@@ -82,7 +83,7 @@ export default function ConfirmPage() {
 
                     {/* 메뉴 하나 = 카드 하나: 1줄 그림·이름·금액 / 2줄 옵션 / 3줄 수량 */}
                     {cart.map((line) => (
-                        <div key={line.key} className="confirm-row">
+                        <section key={line.key} className="confirm-row glass">
                             <div className="confirm-row__main">
                                 <FoodTile icon={line.icon} />
                                 <span className="confirm-row__text">
@@ -117,14 +118,21 @@ export default function ConfirmPage() {
                                     </button>
                                 </span>
                             </div>
-                        </div>
+                        </section>
                     ))}
 
                     <div className="confirm-total">
                         <span>모두</span>
                         <b>{formatPrice(total)}</b>
                     </div>
-                    <p className="ai-note">AI가 잘못 알아들을 수 있어요. 확인해 주세요</p>
+                    <p className="ai-note">
+                        <InfoIcon />
+                        <span>
+                            텔로가 잘못 알아들을 수 있어요.
+                            <br />
+                            확인해 주세요
+                        </span>
+                    </p>
                 </main>
 
                 <div className="phone__footer">
@@ -138,7 +146,7 @@ export default function ConfirmPage() {
 
                 <BottomSheet
                     open={sheet === 'idle'}
-                    icon={<BellIcon />}
+                    icon={<Tello face="sad" size={96} />}
                     title="도와드릴까요?"
                     desc={script.idleDesc}
                 >

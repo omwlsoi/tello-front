@@ -1,5 +1,5 @@
-// 높이 60px 이상의 큰 버튼 (고령층·아동도 누르기 쉽게)
-// variant: primary(파랑) | dark(검정) | outline(흰 바탕 테두리) | soft(연파랑)
+// 높이 68px 의 큰 버튼 (고령층·아동도 누르기 쉽게)
+// variant: primary(파랑) | dark(직원 부르기) | outline(흰 바탕 파랑 테두리) | soft(연한 유리)
 export default function BigButton({
     variant = 'primary',
     icon,

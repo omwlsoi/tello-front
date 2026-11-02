@@ -236,8 +236,8 @@ export const useSessionStore = create(
         {
             name: STORAGE_KEY,
             storage: createJSONStorage(safeStorage),
-            // 메뉴 DB 구조가 바뀌면 version 을 올려서 예전 장바구니를 비워요
-            version: 2,
+            // 메뉴 DB·대본 구조가 바뀌면 version 을 올려서 예전 장바구니·대화를 비워요
+            version: 3,
             migrate: () => initialState(),
         },
     ),

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header, { BackIcon, BellIcon, MicIcon } from '../components/common/Header';
+import Header, { ArrowIcon, BackIcon, MicIcon, TapIcon, Tello } from '../components/common/Header';
 import BigButton from '../components/common/BigButton';
 import BottomSheet from '../components/common/BottomSheet';
 import Toast from '../components/common/Toast';
-import MenuCard, { FoodIcon } from '../components/order/MenuCard';
+import MenuCard, { FoodTile } from '../components/order/MenuCard';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import useIdleTimer from '../hooks/useIdleTimer';
 import {
@@ -103,7 +103,6 @@ export default function MenuPage() {
         <div className="stage">
             <div className="phone menu-phone">
                 <Header
-                    title="메뉴 고르기"
                     left={
                         <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={() => navigate('/')}>
                             <BackIcon />
@@ -119,9 +118,14 @@ export default function MenuPage() {
                             <MicIcon size={22} />
                         </button>
                     }
-                />
+                >
+                    <span className="app-header__title">
+                        메뉴 고르기
+                        <TapIcon />
+                    </span>
+                </Header>
 
-                <div className="menu-tabs" role="tablist">
+                <div className="menu-tabs glass" role="tablist">
                     {menu.categories.map((c) => (
                         <button
                             key={c.id}
@@ -146,7 +150,8 @@ export default function MenuPage() {
 
                 <div className="phone__footer">
                     <BigButton disabled={!count} onClick={() => navigate('/confirm')}>
-                        담은 메뉴 보기 ({count})
+                        {count ? `담은 메뉴 보기 · ${count}개` : '메뉴를 먼저 골라 주세요'}
+                        <ArrowIcon size={20} />
                     </BigButton>
                 </div>
 
@@ -156,8 +161,14 @@ export default function MenuPage() {
                     {optionPick && (
                         <div className="menu-options">
                             <div className="menu-options__head">
-                                <FoodIcon icon={getItemIcon(optionPick.item, optionPick.picked)} size={56} />
-                                <h2 className="sheet__title">{optionPick.item.name}</h2>
+                                <FoodTile
+                                    icon={getItemIcon(optionPick.item, optionPick.picked)}
+                                    size={120}
+                                    iconSize={96}
+                                    radius={32}
+                                />
+                                <h2 className="menu-options__name">{optionPick.item.name}</h2>
+                                <p className="sheet__desc">옵션을 골라 주세요</p>
                             </div>
 
                             {optionKeys.map((key) => (
@@ -199,7 +210,7 @@ export default function MenuPage() {
 
                 <BottomSheet
                     open={sheet === 'idle'}
-                    icon={<BellIcon />}
+                    icon={<Tello face="sad" size={96} />}
                     title="도와드릴까요?"
                     desc={script.idleDesc}
                 >

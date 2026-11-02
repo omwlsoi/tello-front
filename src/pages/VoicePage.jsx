@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header, { BackIcon, BellIcon, MicIcon } from '../components/common/Header';
+import Header, { BackIcon, BookIcon, CheckIcon, MicIcon, Tello, WaveIcon } from '../components/common/Header';
 import BigButton from '../components/common/BigButton';
 import BottomSheet from '../components/common/BottomSheet';
 import Toast from '../components/common/Toast';
@@ -22,10 +22,21 @@ import script from '../mocks/messages.json';
 import './VoicePage.css';
 
 // "더 필요한 게 있나요?" 다음에 나오는 버튼
+// kind: lime(파랑 채움) | gbtn(흰 바탕) | staff(직원 부르기), sub: 버튼 안 작은 설명
 const MORE_CHOICES = [
-    { action: 'more', label: '네' },
-    { action: 'done', label: '아니요' },
+    { action: 'more', label: '네', sub: '더 주문할게요', kind: 'gbtn' },
+    { action: 'done', label: '아니요', sub: '주문 확인하기', kind: 'lime' },
 ];
+
+// 텔로 상태 (이름 옆 점 색 + 표정)
+const STATUS = {
+    wait: { label: '대기 중', tone: 'gray', face: 'smile' },
+    listen: { label: '듣는 중', tone: 'blue', face: 'listen' },
+    check: { label: '확인 중', tone: 'yellow', face: 'think' },
+    added: { label: '담았어요', tone: 'blue', face: 'happy' },
+    fail: { label: '잘 못 들었어요', tone: 'orange', face: 'sad' },
+    idle: { label: '기다리는 중', tone: 'gray', face: 'sad' },
+};
 
 // 버튼으로 답해야 하는 질문 (이때는 마이크 대신 버튼을 눌러야 해요)
 const BUTTON_ASKS = ['option', 'more'];
@@ -43,6 +54,7 @@ export default function VoicePage() {
     const pushMessage = useSessionStore((s) => s.pushMessage);
     const setVoiceStep = useSessionStore((s) => s.setVoiceStep);
     const setFailCount = useSessionStore((s) => s.setFailCount);
+    const failCount = useSessionStore((s) => s.failCount);
     const addItem = useSessionStore((s) => s.addItem);
     const setFrom = useSessionStore((s) => s.setFrom);
     const callStaff = useSessionStore((s) => s.callStaff);
@@ -96,7 +108,9 @@ export default function VoicePage() {
                     action: 'option',
                     value: c.id,
                     said: c.label,
-                    label: c.extra ? `${c.label} (+${c.extra}원)` : c.label,
+                    label: c.label,
+                    sub: key === 'size' ? (c.extra ? `+${formatPrice(c.extra)}` : '기본 가격') : '',
+                    kind: c.id === OPTIONS[key].default ? 'lime' : 'gbtn',
                 })),
             });
         },
@@ -110,7 +124,7 @@ export default function VoicePage() {
             ai(
                 script.greeting,
                 { guide: script.guide, guideTip: script.guideTip },
-                [script.greeting, ...script.guide].join(' '),
+                [script.greeting, ...script.guide.map((g) => g.a + g.b + g.c)].join(' '),
             );
         }
     }, [ai, setFrom]);
@@ -172,9 +186,9 @@ export default function VoicePage() {
             ai(script.failTwice, {
                 warn: true,
                 choices: [
-                    { action: 'retry', label: '다시 말하기' },
-                    { action: 'menu', label: '눌러서 주문하기' },
-                    { action: 'call', label: '직원 부르기', full: true },
+                    { action: 'retry', label: '다시 말하기', kind: 'lime' },
+                    { action: 'menu', label: '눌러서 주문', kind: 'gbtn' },
+                    { action: 'call', label: '직원 부르기', kind: 'staff', full: true },
                 ],
             });
         } else {
@@ -210,92 +224,150 @@ export default function VoicePage() {
     };
 
     const lastIndex = chat.length - 1;
+    const last = chat[lastIndex];
+
+    // 지금 텔로가 어떤 상태인지
+    let statusKey = 'wait';
+    if (sheet === 'idle') statusKey = 'idle';
+    else if (listening) statusKey = 'listen';
+    else if (last?.who === 'ai' && last.warn) statusKey = 'fail';
+    else if (last?.who === 'ai' && last.ask === 'option') statusKey = 'check';
+    else if (last?.who === 'ai' && last.ask === 'more') statusKey = 'added';
+    else if (failCount > 0) statusKey = 'fail';
+    const status = STATUS[statusKey];
 
     return (
         <div className="stage">
             <div className="phone">
                 <Header
-                    title="말로 주문하기"
                     left={
                         <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={() => navigate('/')}>
                             <BackIcon />
                         </button>
                     }
                     right={
-                        <button type="button" className="pill-btn" onClick={() => navigate('/menu')}>
-                            메뉴판
+                        <button
+                            type="button"
+                            className="icon-btn icon-btn--blue"
+                            aria-label="메뉴판 보기"
+                            onClick={() => navigate('/menu')}
+                        >
+                            <BookIcon />
                         </button>
                     }
-                />
+                >
+                    <span className="app-header__title">
+                        말로 주문
+                        <WaveIcon />
+                    </span>
+                </Header>
 
-                <div className="voice-chat" ref={chatRef} aria-live="polite">
-                    {chat.map((m, i) => {
-                        const locked = i !== lastIndex;
-                        if (m.who === 'me') {
-                            return (
-                                <div key={m.id} className="voice-msg voice-msg--me">
-                                    <span className="voice-msg__who">나</span>
-                                    <div className={`voice-bubble voice-bubble--me ${m.unheard ? 'voice-bubble--unheard' : ''}`}>
+                <div className="voice-who">
+                    <Tello face={status.face} size={66} />
+                    <span className="voice-who__text">
+                        <span className="voice-who__status">
+                            <span className={`voice-dot voice-dot--${status.tone}`} />
+                            <span className="eyebrow">{status.label}</span>
+                        </span>
+                        <span className="voice-who__name">주문 받는 점원, 텔로</span>
+                    </span>
+                </div>
+
+                <div className="voice-chat glass" ref={chatRef} aria-live="polite">
+                    <div className="voice-chat__list">
+                        {chat.map((m, i) => {
+                            const locked = i !== lastIndex;
+                            if (m.who === 'me') {
+                                return (
+                                    <div
+                                        key={m.id}
+                                        className={`voice-bubble voice-bubble--me ${m.unheard ? 'voice-bubble--unheard' : ''}`}
+                                    >
                                         {m.text}
                                     </div>
-                                </div>
-                            );
-                        }
-                        return (
-                            <div key={m.id} className="voice-msg">
-                                <span className="voice-msg__who">AI 점원</span>
-                                <div className={`voice-bubble ${m.warn ? 'voice-bubble--warn' : ''}`}>
-                                    {m.text}
+                                );
+                            }
+                            return (
+                                <div key={m.id} className="voice-msg">
+                                    <div className={`voice-bubble ${m.warn ? 'voice-bubble--warn' : ''}`}>
+                                        <span>{m.text}</span>
+                                        {m.card && (
+                                            <div className="voice-card">
+                                                <FoodTile icon={m.card.icon} size={60} iconSize={54} />
+                                                <span className="voice-card__text">
+                                                    <b className="voice-card__name">{m.card.name}</b>
+                                                    {m.card.opt && <span className="voice-card__opt">{m.card.opt}</span>}
+                                                    <span className="voice-card__price">{formatPrice(m.card.price)}</span>
+                                                </span>
+                                                <span className="voice-card__check" aria-label="담았어요">
+                                                    <CheckIcon size={18} color="#FFFFFF" />
+                                                </span>
+                                            </div>
+                                        )}
+                                        {m.followUp && <span>{m.followUp}</span>}
+                                    </div>
                                     {m.guide && (
                                         <>
                                             <ol className="voice-guide">
-                                                {m.guide.map((line, n) => (
-                                                    <li key={line} className="voice-guide__step">
+                                                {m.guide.map((g, n) => (
+                                                    <li key={g.b} className="voice-guide__step">
                                                         <span className="voice-guide__num">{n + 1}</span>
-                                                        <span>{line}</span>
+                                                        <span className="voice-guide__text">
+                                                            {g.a}
+                                                            <b>{g.b}</b>
+                                                            {g.c}
+                                                        </span>
                                                     </li>
                                                 ))}
                                             </ol>
-                                            {m.guideTip && <p className="voice-guide__tip">{m.guideTip}</p>}
+                                            {m.guideTip && (
+                                                <p className="voice-guide__tip">
+                                                    말이 어려우면 위의{' '}
+                                                    <span className="voice-guide__chip">
+                                                        <BookIcon size={16} color="#FFFFFF" />
+                                                        메뉴판
+                                                    </span>
+                                                    을 눌러
+                                                    <br />
+                                                    사진으로 골라도 돼요.
+                                                </p>
+                                            )}
                                         </>
                                     )}
-                                    {m.card && (
-                                        <div className="voice-card">
-                                            <FoodTile icon={m.card.icon} size={64} iconSize={44} />
-                                            <span className="voice-card__text">
-                                                <b className="voice-card__name">{m.card.name}</b>
-                                                {m.card.opt && <span className="voice-card__opt">{m.card.opt}</span>}
-                                                <span className="voice-card__price">{formatPrice(m.card.price)}</span>
-                                            </span>
-                                        </div>
-                                    )}
-                                    {m.followUp && <p className="voice-followup">{m.followUp}</p>}
                                     {m.choices && (
-                                        <div className={`voice-choices ${m.choices.length === 3 && !m.choices.some((c) => c.full) ? 'voice-choices--three' : ''}`}>
+                                        <div
+                                            className={`voice-choices ${m.choices.length === 3 && !m.choices.some((c) => c.full) ? 'voice-choices--three' : ''}`}
+                                        >
                                             {m.choices.map((c) => (
                                                 <button
                                                     key={c.label}
                                                     type="button"
-                                                    className={`voice-choice ${c.full ? 'voice-choice--full' : ''}`}
+                                                    className={`voice-choice voice-choice--${c.kind ?? 'gbtn'} ${c.full ? 'voice-choice--full' : ''}`}
                                                     disabled={locked}
                                                     onClick={() => onChoice(m, c)}
                                                 >
-                                                    {c.label}
+                                                    <span>{c.label}</span>
+                                                    {c.sub && <span className="voice-choice__sub">{c.sub}</span>}
                                                 </button>
                                             ))}
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
 
-                <div className="phone__footer">
+                <div className="voice-dock glass">
                     <CartBar cart={cart} onConfirm={() => navigate('/confirm')} />
                     <div className="voice-mic">
-                        <span className="voice-mic__label">
-                            {listening ? '듣고 있어요…' : '누르고 말해 주세요'}
+                        <span className="voice-mic__text">
+                            <span className="voice-mic__label">
+                                {listening ? '듣고 있어요…' : failCount > 0 ? '다시 말해 볼까요?' : '누르고 말해 주세요'}
+                            </span>
+                            <span className="voice-mic__sub">
+                                {listening ? '천천히 말해 주세요' : '예: 아아 하나 주세요'}
+                            </span>
                         </span>
                         <button
                             type="button"
@@ -312,7 +384,7 @@ export default function VoicePage() {
 
                 <BottomSheet
                     open={sheet === 'idle'}
-                    icon={<BellIcon />}
+                    icon={<Tello face="sad" size={96} />}
                     title={script.idle}
                     desc={script.idleDescVoice}
                 >
