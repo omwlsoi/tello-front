@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrandHeader, CardIcon, CheckIcon, Tello } from '../components/common/Header';
+import script from '../mocks/messages.json';
 import BigButton from '../components/common/BigButton';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useSessionStore } from '../stores/sessionStore';
@@ -12,7 +13,7 @@ const STAGES = {
     new: { step: 0, face: 'smile', pose: 'none', eyebrow: '1단계 / 3단계', title: '주문이 들어갔어요', sub: '가게에 잘 전달됐어요' },
     prep: { step: 1, face: 'focus', pose: 'brew', eyebrow: '2단계 / 3단계', title: '지금 만들고 있어요', sub: '조금만 기다려 주세요' },
     ready: { step: 2, face: 'happy', pose: 'done', eyebrow: '3단계 / 3단계', title: '메뉴가 나왔어요!', sub: '카운터로 와 주세요' },
-    picked: { step: 3, face: 'happy', pose: 'done', eyebrow: '모두 끝났어요', title: '맛있게 드세요', sub: '메뉴를 받아 가셨어요' },
+    picked: { step: 3, face: 'happy', pose: 'done', eyebrow: '모두 끝났어요', title: '맛있게 드세요', sub: script.goodbye },
 };
 
 const STEP_LABELS = ['주문 완료', '만드는 중', '다 됐어요'];
@@ -24,6 +25,7 @@ export default function OrderStatusPage() {
     const orders = useSessionStore((s) => s.orders);
     const setOrderStatus = useSessionStore((s) => s.setOrderStatus);
     const startOver = useSessionStore((s) => s.startOver);
+    const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
 
     const live = myOrder ? orders.find((o) => o.no === myOrder.no) : null;
@@ -46,6 +48,8 @@ export default function OrderStatusPage() {
             } catch {
                 // 진동을 지원하지 않는 기기
             }
+        } else if (status === 'picked') {
+            speak(script.goodbye);
         }
         lastSpoken.current = status;
     }, [status, myOrder, speak]);
@@ -57,7 +61,8 @@ export default function OrderStatusPage() {
 
     return (
         <div className="stage">
-            <div className="phone">
+            <div className={`phone ${bigText ? 'phone--big' : ''}`}>
+                <div className="phone__scroll">
                 <BrandHeader />
 
                 {!myOrder ? (
@@ -68,7 +73,7 @@ export default function OrderStatusPage() {
                 ) : (
                     <main className="phone__body status-body">
                         <div className="status-hero glass" role="status">
-                            <Tello face={stage.face} pose={stage.pose} size={100} />
+                            <Tello face={stage.face} pose={stage.pose} size={bigText ? 116 : 100} />
                             <span className="eyebrow status-hero__eyebrow">{stage.eyebrow}</span>
                             <h1 className="status-hero__title">{stage.title}</h1>
                             <p className="status-hero__sub">{stage.sub}</p>
@@ -122,6 +127,7 @@ export default function OrderStatusPage() {
                     <BigButton variant="outline" onClick={goHome}>
                         처음으로
                     </BigButton>
+                </div>
                 </div>
             </div>
 

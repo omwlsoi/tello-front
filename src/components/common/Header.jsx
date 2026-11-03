@@ -1,5 +1,6 @@
 // 화면 상단 헤더 + 여러 화면에서 함께 쓰는 아이콘·캐릭터
 import storeInfo from '../../mocks/store.json';
+import { useSessionStore } from '../../stores/sessionStore';
 
 const stroke = (size, color, width = 2.2) => ({
     width: size,
@@ -121,6 +122,27 @@ export function InfoIcon({ size = 20 }) {
     );
 }
 
+// 확장 아이콘: 작은 네모에서 큰 네모로 커지는 화살표
+export function ExpandIcon({ size = 18 }) {
+    return (
+        <svg {...stroke(size, 'currentColor', 2.4)}>
+            <path d="M3 9V4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <path d="M12 12l6-6M13.5 6H18v4.5" />
+        </svg>
+    );
+}
+
+export function CartIcon({ size = 24 }) {
+    return (
+        <svg {...stroke(size, 'currentColor', 2.2)}>
+            <path d="M3 4h2.2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2" />
+            <circle cx="9.5" cy="20" r="1.4" />
+            <circle cx="17" cy="20" r="1.4" />
+        </svg>
+    );
+}
+
 export function CardIcon({ size = 26 }) {
     return (
         <svg {...stroke(size, '#FFFFFF')}>
@@ -163,34 +185,35 @@ export function MarkIcon({ mark, size = 32 }) {
 // face: smile | listen | think | happy | sad | focus
 // pose: none | brew(커피 만드는 중) | done(다 됐어요)
 const DOT_EYES = {
-    eL: 'M39 50 l0 0.01',
-    eR: 'M61 50 l0 0.01',
-    ew: 9,
-    gLx: 40.6,
-    gRx: 62.6,
-    gy: 48.3,
+    eL: 'M42.5 68.5 l0 0.01',
+    eR: 'M57.5 68.5 l0 0.01',
+    ew: 6,
+    gLx: 43.6,
+    gRx: 58.6,
+    gy: 67.2,
     gOp: 1,
     b: '',
     tearOp: 0,
 };
 const FACES = {
-    smile: { ...DOT_EYES, m: 'M44.5 61 q5.5 5 11 0', mFill: 'none' },
-    listen: { ...DOT_EYES, ew: 10, m: 'M46 61.5 a4 4.6 0 1 0 8 0 a4 4.6 0 1 0 -8 0', mFill: '#14213D' },
-    think: { ...DOT_EYES, eL: 'M41 47 l0 0.01', eR: 'M63 47 l0 0.01', gLx: 42.6, gRx: 64.6, gy: 45.3, m: 'M45 64 q5 1.5 10 -2', mFill: 'none' },
-    happy: { ...DOT_EYES, eL: 'M34.5 51.5 q4.5 -5 9 0', eR: 'M56.5 51.5 q4.5 -5 9 0', ew: 3.4, gOp: 0, m: 'M42.5 59.5 q7.5 8 15 0', mFill: 'none' },
-    sad: { ...DOT_EYES, eL: 'M39 51 l0 0.01', eR: 'M61 51 l0 0.01', gy: 49.3, m: 'M44.5 65.5 q5.5 -4 11 0', mFill: 'none', b: 'M31 43.5 l8 -3.2 M69 43.5 l-8 -3.2', tearOp: 1 },
-    focus: { ...DOT_EYES, eL: 'M39 53 l0 0.01', eR: 'M61 53 l0 0.01', gy: 51.3, m: 'M46 63.5 q4 2.6 8 0', mFill: 'none' },
+    smile: { ...DOT_EYES, m: 'M46.5 74.5 q3.5 3 7 0', mFill: 'none' },
+    listen: { ...DOT_EYES, ew: 6.5, m: 'M47.6 75.6 a2.4 2.9 0 1 0 4.8 0 a2.4 2.9 0 1 0 -4.8 0', mFill: '#14213D' },
+    think: { ...DOT_EYES, eL: 'M44 66.5 l0 0.01', eR: 'M59 66.5 l0 0.01', gLx: 45.1, gRx: 60.1, gy: 65.2, m: 'M47 77 q3 1 6 -1.5', mFill: 'none' },
+    happy: { ...DOT_EYES, eL: 'M38.8 69.5 q3.7 -4 7.4 0', eR: 'M53.8 69.5 q3.7 -4 7.4 0', ew: 2.4, gOp: 0, m: 'M45 74 q5 5.5 10 0', mFill: 'none' },
+    sad: { ...DOT_EYES, eL: 'M42.5 69.5 l0 0.01', eR: 'M57.5 69.5 l0 0.01', gy: 68.2, m: 'M46.5 78 q3.5 -2.6 7 0', mFill: 'none', b: 'M37.5 64 l5 -1.8 M62.5 64 l-5 -1.8', tearOp: 1 },
+    focus: { ...DOT_EYES, eL: 'M42.5 70 l0 0.01', eR: 'M57.5 70 l0 0.01', gy: 68.7, m: 'M47.5 76.5 q2.5 1.8 5 0', mFill: 'none' },
 };
 const POSES = {
-    none: { aL: [17, 70, 18], aR: [83, 70, -18], brew: 0, done: 0 },
-    brew: { aL: [36, 85, 58], aR: [64, 85, -58], brew: 1, done: 0 },
-    done: { aL: [6, 32, -28], aR: [94, 32, 28], brew: 0, done: 1 },
+    none: { aL: [30, 90, 35], aR: [70, 90, -35], brew: 0, done: 0 },
+    brew: { aL: [38, 93, 62], aR: [62, 93, -62], brew: 1, done: 0 },
+    done: { aL: [13, 80, -40], aR: [87, 80, 40], brew: 0, done: 1 },
 };
+const LOOP = 'M50 30 C 60 22, 63 9, 54 4.5 C 45 0, 38 9, 45 15 C 51 20, 59 15, 57 9';
 
 function Arm({ at }) {
     const [x, y, r] = at;
     return (
-        <ellipse cx={x} cy={y} rx="5.8" ry="10.5" fill="#B7CDFF" stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="1" transform={`rotate(${r} ${x} ${y})`} />
+        <ellipse cx={x} cy={y} rx="4.6" ry="8.6" fill="#FFFFFF" stroke="#D5DEEF" strokeWidth="1" transform={`rotate(${r} ${x} ${y})`} />
     );
 }
 
@@ -207,53 +230,73 @@ export function Tello({ face = 'smile', pose = 'none', size = 160, className = '
             style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}
         >
             <defs>
-                <linearGradient id="tello-glass" x1="0" y1="0" x2="0.4" y2="1">
-                    <stop offset="0" stopColor="#FFF1C2" />
-                    <stop offset="1" stopColor="#9CBCFF" />
+                <linearGradient id="tr-hood" x1="0.2" y1="0" x2="0.8" y2="1">
+                    <stop offset="0" stopColor="#C3D5FB" />
+                    <stop offset="1" stopColor="#7E9FEA" />
                 </linearGradient>
-                <radialGradient id="tello-halo" cx="0.5" cy="0.5" r="0.5">
-                    <stop offset="0" stopColor="#FFE27A" stopOpacity="0.45" />
+                <linearGradient id="tr-loop" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#B9CEFA" />
+                    <stop offset="1" stopColor="#86A6EE" />
+                </linearGradient>
+                <radialGradient id="tr-halo" cx="0.5" cy="0.5" r="0.5">
+                    <stop offset="0" stopColor="#FFE27A" stopOpacity="0.35" />
                     <stop offset="1" stopColor="#FFE27A" stopOpacity="0" />
                 </radialGradient>
             </defs>
-            <circle cx="50" cy="58" r="56" fill="url(#tello-halo)" />
+            <circle cx="50" cy="66" r="52" fill="url(#tr-halo)" />
             <g opacity={p.done}>
-                <path d="M14 10 l1.4 -4.2 l1.4 4.2 l4.2 1.4 l-4.2 1.4 l-1.4 4.2 l-1.4 -4.2 l-4.2 -1.4 z" fill="#F5C400" />
-                <path d="M27 0 l1 -3 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 z" fill="#5B8CFF" />
-                <path d="M72 -1 l1 -3 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 z" fill="#5B8CFF" />
+                <path d="M12 26 l1.4 -4.2 l1.4 4.2 l4.2 1.4 l-4.2 1.4 l-1.4 4.2 l-1.4 -4.2 l-4.2 -1.4 z" fill="#F5C400" />
+                <path d="M24 12 l1 -3 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 z" fill="#5B8CFF" />
+                <path d="M74 6 l1 -3 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 z" fill="#5B8CFF" />
             </g>
-            <ellipse cx="50" cy="115" rx="27" ry="3.6" fill="#14213D" opacity="0.1" />
-            <rect x="32" y="97" width="14" height="17" rx="7" fill="#86A9F5" />
-            <rect x="54" y="97" width="14" height="17" rx="7" fill="#86A9F5" />
-            <rect x="18" y="8" width="64" height="98" rx="32" fill="url(#tello-glass)" opacity="0.95" />
-            <ellipse cx="33" cy="30" rx="7.5" ry="14" fill="#FFFFFF" opacity="0.5" transform="rotate(-18 33 30)" />
-            <rect x="18.8" y="8.8" width="62.4" height="96.4" rx="31.2" fill="none" stroke="#FFFFFF" strokeOpacity="0.9" strokeWidth="1.6" />
-            <ellipse cx="30.5" cy="61" rx="6" ry="3.4" fill="#F59A97" opacity="0.6" />
-            <ellipse cx="69.5" cy="61" rx="6" ry="3.4" fill="#F59A97" opacity="0.6" />
+            <ellipse cx="50" cy="115" rx="22" ry="3.4" fill="#14213D" opacity="0.1" />
+            {/* 다리 · 몸 */}
+            <rect x="39" y="94" width="9" height="19" rx="4.5" fill="#FFFFFF" stroke="#D5DEEF" strokeWidth="1" />
+            <rect x="52" y="94" width="9" height="19" rx="4.5" fill="#FFFFFF" stroke="#D5DEEF" strokeWidth="1" />
+            <rect x="35" y="84" width="30" height="17" rx="10" fill="#8FAFF1" />
+            {/* 머리 위 고리 + 후드 */}
+            <path d={LOOP} fill="none" stroke="#7E9FEA" strokeWidth="10" strokeLinecap="round" />
+            <path d={LOOP} fill="none" stroke="url(#tr-loop)" strokeWidth="7.4" strokeLinecap="round" />
+            <path d="M50 24 C 64 30, 87 44, 86 66 C 85 86, 69 93, 50 93 C 31 93, 15 86, 14 66 C 13 44, 36 30, 50 24 Z" fill="url(#tr-hood)" />
+            <ellipse cx="29" cy="44" rx="5" ry="10" fill="#FFFFFF" opacity="0.35" transform="rotate(35 29 44)" />
+            {/* 얼굴 · 앞머리 · 볼 */}
+            <ellipse cx="50" cy="67" rx="24" ry="20" fill="#9BB8F4" />
+            <ellipse cx="50" cy="67.5" rx="21.5" ry="17.5" fill="#FFFFFF" />
+            <path
+                d="M28.6 66 C 26.5 51, 37 45.5, 50 45.5 C 63 45.5, 73.5 51, 71.4 66 C 67 59.5, 61 57, 55.5 56 C 53.5 58.5, 51.5 59.5, 50 59.5 C 48.5 58, 46 56.5, 44 56.5 C 38 57.5, 32.5 61, 28.6 66 Z"
+                fill="#2B4DB5"
+            />
+            <path d="M36 52 C 40 48.5, 45 47.5, 49 47.8" fill="none" stroke="#5D7FDB" strokeWidth="1.6" strokeLinecap="round" opacity="0.8" />
+            <ellipse cx="36" cy="75" rx="4.8" ry="3.2" fill="#F6C343" opacity="0.9" />
+            <ellipse cx="64" cy="75" rx="4.8" ry="3.2" fill="#F6C343" opacity="0.9" />
+            {/* 표정 */}
             <path d={f.eL} fill="none" stroke="#14213D" strokeWidth={f.ew} strokeLinecap="round" />
             <path d={f.eR} fill="none" stroke="#14213D" strokeWidth={f.ew} strokeLinecap="round" />
-            <circle cx={f.gLx} cy={f.gy} r="1.5" fill="#FFFFFF" opacity={f.gOp} />
-            <circle cx={f.gRx} cy={f.gy} r="1.5" fill="#FFFFFF" opacity={f.gOp} />
-            <path d={f.m} fill={f.mFill} stroke="#14213D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            {f.b && <path d={f.b} fill="none" stroke="#14213D" strokeWidth="2.6" strokeLinecap="round" />}
-            <path d="M35.5 55 q-2.8 4.2 0 6.4 q2.8 -2.2 0 -6.4 z" fill="#A9DDF7" stroke="#6CBDE6" strokeWidth="0.8" opacity={f.tearOp} />
+            <circle cx={f.gLx} cy={f.gy} r="1" fill="#FFFFFF" opacity={f.gOp} />
+            <circle cx={f.gRx} cy={f.gy} r="1" fill="#FFFFFF" opacity={f.gOp} />
+            <path d={f.m} fill={f.mFill} stroke="#14213D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            {f.b && <path d={f.b} fill="none" stroke="#14213D" strokeWidth="1.8" strokeLinecap="round" />}
+            <path d="M40.5 72 q-2 3 0 4.6 q2 -1.6 0 -4.6 z" fill="#A9DDF7" stroke="#6CBDE6" strokeWidth="0.7" opacity={f.tearOp} />
+            {/* 헤드셋 */}
+            <path d="M16 63 C 13 33, 87 33, 84 63" fill="none" stroke="#2A3F8F" strokeWidth="2.2" strokeLinecap="round" opacity="0.55" />
+            <rect x="11.5" y="58" width="7" height="14" rx="3.5" fill="#2A3F8F" />
+            <path d="M81 72 Q 78 82 64 81" fill="none" stroke="#2A3F8F" strokeWidth="2.2" strokeLinecap="round" />
+            <ellipse cx="62.5" cy="81" rx="3" ry="2.4" fill="#2A3F8F" />
+            <circle cx="84" cy="65" r="8.5" fill="#2A3F8F" />
+            <circle cx="84" cy="65" r="5.8" fill="#FFF4CF" />
+            <path d="M81.2 62.6 h5.6 M84 62.6 v5.6" fill="none" stroke="#F0B400" strokeWidth="1.9" strokeLinecap="round" />
+            {/* 커피 만드는 중 */}
             <g opacity={p.brew}>
-                <path d="M46 72 q-2 -3 0 -6 M54 72 q-2 -3 0 -6" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-                <path d="M39 76 h22 l-2.6 20 h-16.8 z" fill="#FFFFFF" stroke="#C3CFE6" strokeWidth="1.2" />
-                <rect x="40.3" y="82" width="19.4" height="6" fill="#FFC93C" />
-                <rect x="37.5" y="73.5" width="25" height="4" rx="2" fill="#EEF2FA" stroke="#C3CFE6" strokeWidth="1" />
+                <path d="M46 84 q-2 -3 0 -6 M54 84 q-2 -3 0 -6" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+                <path d="M40 87 h20 l-2.4 16 h-15.2 z" fill="#FFFFFF" stroke="#C3CFE6" strokeWidth="1.2" />
+                <rect x="41.2" y="92" width="17.6" height="5" fill="#FFC93C" />
+                <rect x="38.5" y="85" width="23" height="3.6" rx="1.8" fill="#EEF2FA" stroke="#C3CFE6" strokeWidth="1" />
             </g>
             <Arm at={p.aL} />
             <Arm at={p.aR} />
-            <path d="M17 46 C14 -3, 86 -3, 83 46" fill="none" stroke="#C9D3E6" strokeWidth="7" strokeLinecap="round" />
-            <path d="M17 46 C14 -3, 86 -3, 83 46" fill="none" stroke="#FFFFFF" strokeWidth="4.6" strokeLinecap="round" />
-            <rect x="11" y="38" width="11" height="21" rx="5.5" fill="#FFFFFF" stroke="#C9D3E6" strokeWidth="1.3" />
-            <rect x="78" y="38" width="11" height="21" rx="5.5" fill="#FFFFFF" stroke="#C9D3E6" strokeWidth="1.3" />
-            <path d="M15 57 Q17 70 33 70" fill="none" stroke="#DDE4F0" strokeWidth="2.6" strokeLinecap="round" />
-            <circle cx="35" cy="70" r="3.2" fill="#2C3A5A" />
             <g opacity={p.done}>
-                <circle cx="86" cy="18" r="8.5" fill="#FFC93C" stroke="#FFFFFF" strokeWidth="1.5" />
-                <path d="M82 18.3 l2.8 2.8 l5.4 -5.6" fill="none" stroke="#14213D" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="90" cy="30" r="8" fill="#FFC93C" stroke="#FFFFFF" strokeWidth="1.5" />
+                <path d="M86.2 30.3 l2.6 2.6 l5.1 -5.3" fill="none" stroke="#14213D" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
             </g>
         </svg>
     );
@@ -288,7 +331,25 @@ export function Logo({ height = 40 }) {
     );
 }
 
-// 로고 + 가게 이름 (시작 화면 · 주문 완료 화면)
+// 큰 글씨 모드 켜기·끄기 버튼 (켜면 노랑)
+export function ZoomButton() {
+    const on = useSessionStore((st) => st.bigText);
+    const toggle = useSessionStore((st) => st.toggleBigText);
+    return (
+        <button
+            type="button"
+            className={`zoom-btn ${on ? 'is-on' : ''}`}
+            aria-pressed={on}
+            aria-label={on ? '큰 글씨 끄기' : '큰 글씨로 보기'}
+            onClick={toggle}
+        >
+            <ExpandIcon />
+            큰 글씨
+        </button>
+    );
+}
+
+// 로고 + 가게 이름 + 큰 글씨 버튼 (시작 화면 · 주문 완료 화면)
 export function BrandHeader() {
     return (
         <header className="brand-header">
@@ -297,6 +358,7 @@ export function BrandHeader() {
                 <span className="brand-dot" />
                 {storeInfo.name}
             </span>
+            <ZoomButton />
         </header>
     );
 }

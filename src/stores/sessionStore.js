@@ -96,6 +96,7 @@ const initialState = () => ({
     myOrder: null,
     nextNo: orderMock.firstNo,
     soundOn: true,
+    bigText: false, // 큰 글씨 모드(X1.5)
 });
 
 const safeStorage = () => {
@@ -114,10 +115,11 @@ export const useSessionStore = create(
 
             setFrom: (from) => set({ from }),
             toggleSound: () => set((s) => ({ soundOn: !s.soundOn })),
+            toggleBigText: () => set((s) => ({ bigText: !s.bigText })),
 
             // ---------- 담은 메뉴 ----------
-            // options: { size, temperature, ice } — 옵션 없는 메뉴는 생략
-            addItem: (id, options = {}) =>
+            // options: { size, temperature, ice } — 옵션 없는 메뉴는 생략 / qty: 담을 개수
+            addItem: (id, options = {}, qty = 1) =>
                 set((s) => {
                     const item = findItem(id);
                     if (!item) return {};
@@ -128,7 +130,7 @@ export const useSessionStore = create(
                         return {
                             cart: s.cart.map((line) =>
                                 line.key === key
-                                    ? { ...line, qty: line.qty + 1 }
+                                    ? { ...line, qty: line.qty + qty }
                                     : line,
                             ),
                         };
@@ -144,7 +146,7 @@ export const useSessionStore = create(
                                 opt: getOptionLabel(picked),
                                 icon: getItemIcon(item, picked),
                                 price: item.price + sizeExtra(picked.size),
-                                qty: 1,
+                                qty,
                             },
                         ],
                     };

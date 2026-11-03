@@ -11,6 +11,7 @@ export default function EntryPage() {
     const soundOn = useSessionStore((s) => s.soundOn);
     const toggleSound = useSessionStore((s) => s.toggleSound);
     const resetDemo = useSessionStore((s) => s.resetDemo);
+    const bigText = useSessionStore((s) => s.bigText);
 
     const start = (mode) => {
         setFrom(mode);
@@ -19,68 +20,131 @@ export default function EntryPage() {
 
     return (
         <div className="stage">
-            <div className="phone">
-                <BrandHeader />
+            <div className={`phone ${bigText ? 'phone--big' : ''}`}>
+                <div className="phone__scroll">
+                    <BrandHeader />
 
-                <section className="entry-hero glass" aria-label="텔로 인사">
-                    <Tello face="happy" size={236} className="entry-hero__tello" />
-                    <div className="entry-hero__bubble glass">
-                        <span className="entry-hero__hello">
-                            안녕하세요,
-                            <br />
-                            저는 <b>텔로</b>예요
-                        </span>
-                        <h1 className="entry-hero__ask">
-                            어떻게
-                            <br />
-                            주문할까요?
-                        </h1>
-                    </div>
-                </section>
+                    {bigText ? (
+                        <section className="entry-hero entry-hero--big glass" aria-label="텔로 인사">
+                            <div className="entry-hero__row">
+                                <Tello face="happy" size={96} />
+                                <span className="entry-hero__hello">
+                                    안녕하세요,
+                                    <br />
+                                    저는 <b>텔로</b>예요
+                                </span>
+                            </div>
+                            <h1 className="entry-hero__ask">어떻게 주문할까요?</h1>
+                        </section>
+                    ) : (
+                        <section className="entry-hero glass" aria-label="텔로 인사">
+                            <Tello face="happy" size={236} className="entry-hero__tello" />
+                            <div className="entry-hero__bubble glass">
+                                <span className="entry-hero__hello">
+                                    안녕하세요,
+                                    <br />
+                                    저는 <b>텔로</b>예요
+                                </span>
+                                <h1 className="entry-hero__ask">
+                                    어떻게
+                                    <br />
+                                    주문할까요?
+                                </h1>
+                            </div>
+                        </section>
+                    )}
 
-                <main className="entry-options">
-                    <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
-                        <span className="entry-card__tag">추천</span>
-                        <span className="entry-card__row">
-                            <span className="entry-card__name">
-                                <span className="entry-card__mark">말로</span> 주문하기
-                            </span>
-                            <WaveIcon width={34} height={28} color="#FFC93C" />
-                        </span>
-                        <span className="entry-card__desc">
-                            <span className="entry-card__quote">“아이스 아메리카노 하나요!”</span>처럼 말하면
-                            <br />
-                            텔로가 알아들어요
-                        </span>
-                        <span className="entry-card__foot">
-                            <span className="entry-pill entry-pill--white">
-                                텔로에게 말하기
-                                <ArrowIcon />
-                            </span>
-                            <span className="entry-round entry-round--white">
-                                <MicIcon size={24} color="#1D4ED8" />
-                            </span>
-                        </span>
-                    </button>
+                    {bigText ? (
+                        <main className="entry-options">
+                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
+                                <span className="entry-card__tag">추천</span>
+                                <span className="entry-card__row">
+                                    <span className="entry-card__name">
+                                        <span className="entry-card__mark">말로</span>
+                                        <br />
+                                        주문하기
+                                    </span>
+                                    <WaveIcon width={42} height={34} color="#FFC93C" />
+                                </span>
+                                <span className="entry-card__quote">
+                                    “아이스 아메리카노
+                                    <br />
+                                    하나요!”
+                                </span>
+                                <span className="entry-card__desc">
+                                    처럼 말하면
+                                    <br />
+                                    텔로가 알아들어요
+                                </span>
+                                <span className="entry-pill entry-pill--white">
+                                    <MicIcon size={28} />
+                                    텔로에게 말하기
+                                </span>
+                            </button>
 
-                    <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
-                        <span className="entry-card__name entry-card__name--menu">
-                            <span className="entry-card__mark entry-card__mark--blue">눌러서</span> 주문하기
-                        </span>
-                        <span className="entry-card__desc entry-card__desc--menu">
-                            큰 <b>사진</b>만 보고 <b className="entry-card__em">콕!</b> 누르면 돼요
-                        </span>
-                        <span className="entry-card__foot">
-                            <span className="entry-pill entry-pill--blue">
-                                메뉴판 보기
-                                <ArrowIcon />
-                            </span>
-                            <span className="entry-round entry-round--blue">
-                                <HandIcon size={24} color="#FFFFFF" />
-                            </span>
-                        </span>
-                    </button>
-                </main>
+                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
+                                <span className="entry-card__name entry-card__name--menu">
+                                    <span className="entry-card__mark entry-card__mark--blue">눌러서</span>
+                                    <br />
+                                    주문하기
+                                </span>
+                                <span className="entry-card__desc entry-card__desc--menu">
+                                    큰 <b>사진</b>만 보고
+                                    <br />
+                                    <b className="entry-card__em">콕!</b> 누르면 돼요
+                                </span>
+                                <span className="entry-pill entry-pill--blue">
+                                    <HandIcon size={28} />
+                                    메뉴판 보기
+                                </span>
+                            </button>
+                        </main>
+                    ) : (
+                        <main className="entry-options">
+                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
+                                <span className="entry-card__tag">추천</span>
+                                <span className="entry-card__row">
+                                    <span className="entry-card__name">
+                                        <span className="entry-card__mark">말로</span> 주문하기
+                                    </span>
+                                    <WaveIcon width={34} height={28} color="#FFC93C" />
+                                </span>
+                                <span className="entry-card__desc">
+                                    <span className="entry-card__quote">“아이스 아메리카노 하나요!”</span>처럼 말하면
+                                    <br />
+                                    텔로가 알아들어요
+                                </span>
+                                <span className="entry-card__foot">
+                                    <span className="entry-pill entry-pill--white">
+                                        텔로에게 말하기
+                                        <ArrowIcon />
+                                    </span>
+                                    <span className="entry-round entry-round--white">
+                                        <MicIcon size={24} color="#1D4ED8" />
+                                    </span>
+                                </span>
+                            </button>
+
+                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
+                                <span className="entry-card__name entry-card__name--menu">
+                                    <span className="entry-card__mark entry-card__mark--blue">눌러서</span> 주문하기
+                                </span>
+                                <span className="entry-card__desc entry-card__desc--menu">
+                                    큰 <b>사진</b>만 보고 <b className="entry-card__em">콕!</b> 누르면 돼요
+                                </span>
+                                <span className="entry-card__foot">
+                                    <span className="entry-pill entry-pill--blue">
+                                        메뉴판 보기
+                                        <ArrowIcon />
+                                    </span>
+                                    <span className="entry-round entry-round--blue">
+                                        <HandIcon size={24} color="#FFFFFF" />
+                                    </span>
+                                </span>
+                            </button>
+                        </main>
+                    )}
+                </div>
             </div>
 
             <aside className="demo-panel" aria-label="시연 버튼">

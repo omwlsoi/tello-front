@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header, { ArrowIcon, BackIcon, MicIcon, TapIcon, Tello } from '../components/common/Header';
+import Header, { ArrowIcon, BackIcon, CartIcon, MicIcon, TapIcon, Tello, ZoomButton } from '../components/common/Header';
 import BigButton from '../components/common/BigButton';
 import BottomSheet from '../components/common/BottomSheet';
 import Toast from '../components/common/Toast';
@@ -27,12 +27,14 @@ export default function MenuPage() {
     const addItem = useSessionStore((s) => s.addItem);
     const setFrom = useSessionStore((s) => s.setFrom);
     const callStaff = useSessionStore((s) => s.callStaff);
+    const startOver = useSessionStore((s) => s.startOver);
+    const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
 
     const [tab, setTab] = useState(menu.categories[0].id);
     const [toast, setToast] = useState('');
     const [optionPick, setOptionPick] = useState(null); // { item, picked } 옵션 고르는 중인 메뉴
-    const [sheet, setSheet] = useState(null); // null | 'idle'
+    const [sheet, setSheet] = useState(null); // null | 'idle' | 'leave'
 
     useEffect(() => {
         setFrom('menu');
@@ -91,32 +93,54 @@ export default function MenuPage() {
         : [];
     const optionsDone = optionPick ? !nextOption(optionPick.item, optionPick.picked) : false;
 
-    // 직원 부르기: 누르면 바로 매장 화면에 알림이 가요
+    // 직원 호출: 누르면 바로 매장 화면에 알림이 가요
+    const notify = (msg) => {
+        setSheet(null);
+        setToast(msg);
+        speak(msg);
+    };
     const callNow = (reason) => {
         callStaff(reason);
-        setSheet(null);
-        setToast(script.called);
-        speak(script.called);
+        notify(useSessionStore.getState().cart.length ? script.calledWithCart : script.called);
+    };
+
+    // 뒤로가기: 담은 메뉴가 있으면 한 번 더 물어봐요
+    const goBack = () => {
+        if (cart.length) {
+            setSheet('leave');
+            speak(`${script.leaveTitle}. ${script.leaveDesc}`);
+        } else {
+            navigate('/');
+        }
+    };
+    const leave = () => {
+        notify(script.leaveBye);
+        startOver();
+        setTimeout(() => navigate('/'), 900);
     };
 
     return (
         <div className="stage">
-            <div className="phone menu-phone">
+            <div className={`phone menu-phone ${bigText ? 'phone--big' : ''}`}>
+                <div className="phone__scroll">
                 <Header
                     left={
-                        <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={() => navigate('/')}>
+                        <button type="button" className="icon-btn" aria-label="뒤로가기" onClick={goBack}>
                             <BackIcon />
                         </button>
                     }
                     right={
-                        <button
-                            type="button"
-                            className="icon-btn icon-btn--blue"
-                            aria-label="말로 주문하기"
-                            onClick={() => navigate('/voice')}
-                        >
-                            <MicIcon size={22} />
-                        </button>
+                        <>
+                            <ZoomButton />
+                            <button
+                                type="button"
+                                className="icon-btn icon-btn--blue"
+                                aria-label="말로 주문하기"
+                                onClick={() => navigate('/voice')}
+                            >
+                                <MicIcon size={22} />
+                            </button>
+                        </>
                     }
                 >
                     <span className="app-header__title">
@@ -154,6 +178,7 @@ export default function MenuPage() {
                         <ArrowIcon size={20} />
                     </BigButton>
                 </div>
+                </div>
 
                 <Toast message={toast} onDone={clearToast} />
 
@@ -163,12 +188,14 @@ export default function MenuPage() {
                             <div className="menu-options__head">
                                 <FoodTile
                                     icon={getItemIcon(optionPick.item, optionPick.picked)}
-                                    size={120}
-                                    iconSize={96}
-                                    radius={32}
+                                    size={bigText ? 84 : 120}
+                                    iconSize={bigText ? 70 : 96}
+                                    radius={bigText ? 24 : 32}
                                 />
-                                <h2 className="menu-options__name">{optionPick.item.name}</h2>
-                                <p className="sheet__desc">옵션을 골라 주세요</p>
+                                <span className="menu-options__title">
+                                    <h2 className="menu-options__name">{optionPick.item.name}</h2>
+                                    <p className="sheet__desc">옵션을 골라 주세요</p>
+                                </span>
                             </div>
 
                             {optionKeys.map((key) => (
@@ -198,7 +225,11 @@ export default function MenuPage() {
                                 </div>
                             ))}
 
-                            <BigButton disabled={!optionsDone} onClick={onAddWithOptions}>
+                            <BigButton
+                                disabled={!optionsDone}
+                                icon={optionsDone ? <CartIcon /> : null}
+                                onClick={onAddWithOptions}
+                            >
                                 {optionsDone ? '담기' : '온도를 골라 주세요'}
                             </BigButton>
                             <BigButton variant="outline" onClick={() => setOptionPick(null)}>
@@ -210,13 +241,25 @@ export default function MenuPage() {
 
                 <BottomSheet
                     open={sheet === 'idle'}
-                    icon={<Tello face="sad" size={96} />}
+                    icon={<Tello face="sad" size={bigText ? 100 : 96} />}
                     title="도와드릴까요?"
                     desc={script.idleDesc}
                 >
                     <BigButton onClick={() => setSheet(null)}>계속할게요</BigButton>
                     <BigButton variant="dark" onClick={() => callNow('오래 머무름')}>
-                        직원 부르기
+                        직원 호출
+                    </BigButton>
+                </BottomSheet>
+
+                <BottomSheet
+                    open={sheet === 'leave'}
+                    icon={<Tello face="think" size={bigText ? 100 : 96} />}
+                    title={script.leaveTitle}
+                    desc={script.leaveDesc}
+                >
+                    <BigButton onClick={() => setSheet(null)}>계속 주문할게요</BigButton>
+                    <BigButton variant="outline" onClick={leave}>
+                        그만할게요
                     </BigButton>
                 </BottomSheet>
             </div>
