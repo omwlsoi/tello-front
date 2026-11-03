@@ -480,9 +480,6 @@
     font-size: 26px;
     line-height: 1.45;
 }
-.phone--big .voice-guide__tip br {
-    display: none;
-}
 .phone--big .voice-guide__chip {
     gap: 6px;
     padding: 2px 14px 2px 10px;
@@ -553,26 +550,62 @@
     height: 36px;
 }
 
-/* 큰 글씨 모드 제목: [텔로] 말로 주문 / ● 지금 상태 */
+/* 큰 글씨 모드 제목: 말로 주문 ……… [● 지금 상태] */
 .phone--big .voice-title--big {
+    width: 100%;
+    justify-content: space-between;
     gap: 10px;
-    font-size: 28px;
+    font-size: 30px;
 }
-.voice-title__stack {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-}
-.phone--big .app-header__title .voice-title__tello {
-    width: 44px;
-    height: 53px;
-}
+/* 상태는 제목과 다르게: 색이 들어간 알약 모양 배지 */
 .voice-title__status {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    font-size: 20px;
+    flex-shrink: 0;
+    padding: 8px 16px 8px 14px;
+    border-radius: 999px;
+    border: 2px solid #c9d6f5;
+    background: #fff;
+    font-size: 21px;
     font-weight: 900;
     letter-spacing: -0.02em;
+    color: var(--ink-2);
+}
+.voice-title__status--blue {
+    border-color: #a9c0f2;
+    background: #e6eeff;
     color: var(--blue);
+}
+.voice-title__status--yellow {
+    border-color: #f2d27a;
+    background: #fff6d8;
+    color: #8a6400;
+}
+.voice-title__status--orange {
+    border-color: #ffc29c;
+    background: #fff0e6;
+    color: #b4531a;
+}
+
+/* 수량 질문: 마이크 버튼 하나로 말해서 답해요 */
+.voice-choice--full .voice-choice__main svg {
+    flex-shrink: 0;
+}
+.phone--big .voice-choice--full {
+    min-height: 84px;
+}
+
+/* "추천해 줘"처럼 굵은 말은 중간에서 줄이 끊기지 않게 */
+.voice-guide__tip b {
+    white-space: nowrap;
+}
+/* 기본 화면에서도 "말로 주문" 옆 음성 막대는 보여요 */
+.phone:not(.phone--big) .app-header .voice-title svg {
+    display: inline-block;
+}
+.voice-title__name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }

@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BackIcon, CheckCircleIcon, InfoIcon, MicIcon, Tello, ZoomButton } from '../components/common/Header';
+import { BackIcon, CheckCircleIcon, InfoIcon, Tello, ZoomButton } from '../components/common/Header';
 import BigButton from '../components/common/BigButton';
 import BottomSheet from '../components/common/BottomSheet';
 import Toast from '../components/common/Toast';
 import { FoodTile } from '../components/order/MenuCard';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
-import useSpeechToText from '../hooks/useSpeechToText';
 import { getCartCount, getCartTotal, getChoiceLabel, useSessionStore } from '../stores/sessionStore';
 import formatPrice from '../utils/formatPrice';
 import script from '../mocks/messages.json';
@@ -44,7 +43,6 @@ export default function ConfirmPage() {
     const callStaff = useSessionStore((s) => s.callStaff);
     const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
-    const { listening, listen } = useSpeechToText();
 
     const [sheet, setSheet] = useState(null); // null | 'idle' | 'remove'
     const [idleStage, setIdleStage] = useState(0); // 무응답 몇 번째 안내인지 (0 · 1 · 2)
@@ -79,13 +77,6 @@ export default function ConfirmPage() {
         const order = placeOrder();
         if (order) navigate('/status');
     };
-
-    // 버튼 또는 말로 "맞아요" (STEP 8)
-    const sayYes = () =>
-        listen(() => {
-            setToast(`"${script.confirmYes}"`);
-            setTimeout(submit, 700);
-        });
 
     // [−]로 마지막 1개를 빼려고 하면 한 번 더 물어봐요 (STEP 7)
     const minus = (line) => {
@@ -186,9 +177,9 @@ export default function ConfirmPage() {
                     <p className="ai-note">
                         <InfoIcon />
                         <span>
-                            텔로가 잘못 알아들을 수 있어요.{' '}
+                            텔로링이 잘못 알아들을 수 있어요.
                             <br />
-                            확인해 주세요
+                            확인해 주세요.
                         </span>
                     </p>
                 </main>
@@ -200,12 +191,6 @@ export default function ConfirmPage() {
                     <BigButton variant="outline" onClick={() => navigate(backTo)}>
                         고칠래요
                     </BigButton>
-                    {cart.length > 0 && (
-                        <button type="button" className="sheet-mic confirm-mic" onClick={sayYes}>
-                            <MicIcon size={20} />
-                            {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.confirmYes}"`}
-                        </button>
-                    )}
                 </div>
                 </div>
 

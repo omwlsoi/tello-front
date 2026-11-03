@@ -9,6 +9,7 @@ import { FoodTile } from '../components/order/MenuCard';
 import useSpeechToText from '../hooks/useSpeechToText';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
+import breakLines from '../utils/breakLines';
 import formatPrice from '../utils/formatPrice';
 import {
     OPTIONS,
@@ -28,8 +29,13 @@ const MORE_CHOICES = [
     { action: 'done', label: '아니요', sub: '주문 확인하기', kind: 'lime', said: '아니요' },
 ];
 
-// 수량은 옵션을 다 고른 뒤 마지막에 물어요 (1개가 기본 ★, 4개 이상은 주문 확인 화면의 [+]로)
-const QTY_CHOICES = [1, 2, 3];
+// 수량은 옵션을 다 고른 뒤 마지막에 물어요: [1개]★ [2개] [🎙️ 말하기]
+// (3개 이상이나 수량 고치기는 마이크로 말하거나 주문 확인 화면의 [-] [+]로)
+const QTY_CHOICES = [
+    { action: 'option', value: 1, said: '1개', label: '1개', kind: 'lime' },
+    { action: 'option', value: 2, said: '2개', label: '2개', kind: 'gbtn' },
+    { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true }, // 마이크 아이콘만 보여요
+];
 
 // 텔로 상태 (제목 옆 점 색 + 표정)
 const STATUS = {
@@ -121,13 +127,7 @@ export default function VoicePage() {
             }
             const choices =
                 key === 'qty'
-                    ? QTY_CHOICES.map((n) => ({
-                          action: 'option',
-                          value: n,
-                          said: `${n}개`,
-                          label: `${n}개`,
-                          kind: n === 1 ? 'lime' : 'gbtn',
-                      }))
+                    ? QTY_CHOICES
                     : OPTIONS[key].choices.map((c) => ({
                           action: 'option',
                           value: c.id,
@@ -213,8 +213,11 @@ export default function VoicePage() {
     // 추천 질문은 손님이 다른 메뉴를 말하는 흐름이라 (명세서 3B) 대본으로 넘어가요
     const answerByVoice = (message) => {
         if (message.ask === 'recommend') return false;
+        // 수량은 시연 대본대로 "1개요"라고 말한 걸로 처리해요
         const choice =
-            message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
+            message.option === 'qty'
+                ? { action: 'option', value: 1, label: '1개' }
+                : message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
         let said = withYo(choice.said ?? choice.label);
         if (message.ask === 'more') said = choice.said; // "네" · "아니요" 그대로
         onChoice(message, choice, said);
@@ -374,19 +377,19 @@ export default function VoicePage() {
                     }
                 >
                     {bigText ? (
-                        // 큰 글씨 모드: [텔로] 말로 주문 / ● 지금 상태 (위쪽 텔로 줄 대신)
+                        // 큰 글씨 모드: 말로 주문 ……… [● 지금 상태] (위쪽 텔로링 줄 대신)
                         <span className="app-header__title voice-title--big">
-                            <Tello face={status.face} size={44} className="voice-title__tello" />
-                            <span className="voice-title__stack">
+                            <span className="voice-title__name">
                                 말로 주문
-                                <span className="voice-title__status">
-                                    <span className={`voice-dot voice-dot--${status.tone}`} />
-                                    {status.label}
-                                </span>
+                                <WaveIcon />
+                            </span>
+                            <span className={`voice-title__status voice-title__status--${status.tone}`}>
+                                <span className={`voice-dot voice-dot--${status.tone}`} />
+                                {status.label}
                             </span>
                         </span>
                     ) : (
-                        <span className="app-header__title">
+                        <span className="app-header__title voice-title">
                             말로 주문
                             <WaveIcon />
                         </span>
@@ -400,7 +403,7 @@ export default function VoicePage() {
                             <span className={`voice-dot voice-dot--${status.tone}`} />
                             <span className="eyebrow">{status.label}</span>
                         </span>
-                        <span className="voice-who__name">주문 받는 점원, 텔로</span>
+                        <span className="voice-who__name">주문 받는 점원, 텔로링</span>
                     </span>
                 </div>
 
@@ -415,14 +418,16 @@ export default function VoicePage() {
                                         key={m.id}
                                         className={`voice-bubble voice-bubble--me ${m.unheard ? 'voice-bubble--unheard' : ''}`}
                                     >
-                                        {m.text}
+                                        {breakLines(m.text)}
                                     </div>
                                 );
                             }
                             return (
                                 <div key={m.id} className="voice-msg">
                                     <div className={`voice-bubble ${m.warn ? 'voice-bubble--warn' : ''}`}>
-                                        <span>{m.text}</span>
+                                        <span>
+                                            {breakLines(m.guide && bigText ? m.text.replace(', ', ',\n') : m.text)}
+                                        </span>
                                         {m.card && (
                                             <div className="voice-card">
                                                 <FoodTile icon={m.card.icon} size={60} iconSize={54} />
@@ -436,7 +441,7 @@ export default function VoicePage() {
                                                 </span>
                                             </div>
                                         )}
-                                        {m.followUp && <span>{m.followUp}</span>}
+                                        {m.followUp && <span>{breakLines(m.followUp)}</span>}
                                     </div>
                                     {m.guide && (
                                         <>
@@ -454,7 +459,9 @@ export default function VoicePage() {
                                             </ol>
                                             {m.guideTip && (
                                                 <p className="voice-guide__tip">
-                                                    뭘 먹을지 모르겠으면 <b>"추천해 줘"</b>라고 말해 보세요.{' '}
+                                                    뭘 먹을지 모르겠으면
+                                                    <br />
+                                                    <b>"추천해 줘"</b>라고 말해 보세요.
                                                     <br />
                                                     말이 어려우면 위의{' '}
                                                     <span className="voice-guide__chip">
@@ -474,13 +481,14 @@ export default function VoicePage() {
                                                 <button
                                                     key={c.label}
                                                     type="button"
-                                                    className={`voice-choice voice-choice--${c.kind ?? 'gbtn'} ${c.full ? 'voice-choice--full' : ''}`}
-                                                    disabled={locked}
-                                                    onClick={() => onChoice(m, c)}
+                                                    className={`voice-choice voice-choice--${c.kind ?? 'gbtn'} ${c.full ? 'voice-choice--full' : ''} ${c.mic ? 'voice-choice--mic' : ''}`}
+                                                    disabled={locked || (c.mic && (listening || thinking))}
+                                                    aria-label={c.mic ? c.label : undefined}
+                                                    onClick={c.mic ? onMic : () => onChoice(m, c)}
                                                 >
                                                     <span className="voice-choice__main">
                                                         {c.book && <BookIcon size={20} />}
-                                                        {c.label}
+                                                        {c.mic ? <MicIcon size={bigText ? 40 : 30} color="currentColor" /> : c.label}
                                                     </span>
                                                     {c.sub && <span className="voice-choice__sub">{c.sub}</span>}
                                                 </button>
