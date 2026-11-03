@@ -125,6 +125,11 @@
     text-align: center;
     white-space: nowrap;
 }
+.voice-choice__main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
 .voice-choice__sub {
     font-size: 16px;
     font-weight: 700;
@@ -337,6 +342,10 @@
     justify-content: center;
     flex-shrink: 0;
     box-shadow: var(--blue-shadow);
+}
+.voice-mic__btn:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 .voice-mic__btn.is-listening {
     box-shadow: 0 0 0 10px rgba(29, 78, 216, 0.25), 0 0 0 20px rgba(29, 78, 216, 0.12), var(--blue-shadow);

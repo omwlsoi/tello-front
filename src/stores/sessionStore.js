@@ -178,7 +178,7 @@ export const useSessionStore = create(
             placeOrder: () => {
                 const s = get();
                 if (!s.cart.length) return null;
-                const no = s.nextNo;
+                const no = orderMock.firstNo; // 주문 번호는 27번으로 통일
                 const order = {
                     no,
                     mark: markFor(no),
@@ -194,7 +194,7 @@ export const useSessionStore = create(
                     status: 'new',
                     createdAt: Date.now(),
                 };
-                set({ orders: [order, ...s.orders], myOrder: order, nextNo: no + 1 });
+                set({ orders: [order, ...s.orders.filter((o) => o.no !== no)], myOrder: order });
                 return order;
             },
 

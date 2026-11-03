@@ -383,6 +383,33 @@
     color: var(--sub);
 }
 
+/* 확인 창 안 마이크 버튼 ("말로 답해도 돼요") */
+.sheet-mic {
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 24px;
+    background: transparent;
+    color: var(--blue);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 800;
+}
+.phone--big .sheet-mic {
+    min-height: 56px;
+    font-size: 22px;
+}
+/* 문장이 긴 확인 창 제목 */
+.sheet--long .sheet__title {
+    font-size: 24px;
+    line-height: 1.35;
+}
+.phone--big .sheet--long .sheet__title {
+    font-size: 30px;
+}
+
 /* ===== 토스트 ===== */
 .toast {
     position: absolute;

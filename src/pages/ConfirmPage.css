@@ -192,3 +192,8 @@
     font-size: 46px;
     white-space: nowrap;
 }
+
+/* "말로 답해도 돼요 · 맞아요" (버튼 아래 가운데) */
+.confirm-mic {
+    align-self: center;
+}

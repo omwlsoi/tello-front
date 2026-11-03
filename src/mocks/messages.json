@@ -33,17 +33,23 @@
             "recommend": 0
         },
         {
-            "user": "따뜻한 초코우유 줘요",
-            "ai": "따뜻한 초코우유요.",
+            "user": "따뜻한 초코우유 하나 줘요",
+            "ai": "따뜻한 초코우유 1잔이요.",
             "itemId": "choco_milk",
             "preset": {
                 "temperature": "hot"
-            }
+            },
+            "qty": 1
         },
         {
             "user": "크루아상 하나요",
             "itemId": "croissant",
             "qty": 1
+        },
+        {
+            "user": "아메리카노 줘요",
+            "ai": "아메리카노요.",
+            "itemId": "americano"
         },
         {
             "user": "음…",
@@ -98,5 +104,8 @@
     "leaveTitle": "아직 담은 메뉴가 있어요",
     "leaveDesc": "그만하면 담은 메뉴가 사라져요. 계속 주문할까요?",
     "leaveBye": "주문을 끝낼게요. 이용해 주셔서 고마워요.",
-    "goodbye": "이용해 주셔서 고마워요. 좋은 하루 보내세요!"
+    "goodbye": "이용해 주셔서 고마워요. 좋은 하루 보내세요!",
+    "removeAsk": "{label} 1개를 뺄까요?",
+    "confirmYes": "맞아요",
+    "leaveVoice": "그만할게요"
 }

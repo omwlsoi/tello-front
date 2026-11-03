@@ -8,7 +8,7 @@ import CartBar from '../components/order/CartBar';
 import { FoodTile } from '../components/order/MenuCard';
 import useSpeechToText from '../hooks/useSpeechToText';
 import useTextToSpeech from '../hooks/useTextToSpeech';
-import useIdleTimer from '../hooks/useIdleTimer';
+import { useIdleSteps } from '../hooks/useIdleTimer';
 import formatPrice from '../utils/formatPrice';
 import {
     OPTIONS,
@@ -81,7 +81,7 @@ export default function VoicePage() {
     const [toast, setToast] = useState('');
     const clearToast = useCallback(() => setToast(''), []);
     const chatRef = useRef(null);
-    const idleStage = useRef(0); // 아무 입력 없이 지난 단계 (0 · 1=30초 · 2=1분 · 3=1분 30초)
+    const [thinking, setThinking] = useState(false); // 말이 끝난 뒤 답을 만드는 중 (상태: 확인 중)
 
     const ai = useCallback(
         (text, extra = {}, spoken = text) => {
@@ -189,27 +189,18 @@ export default function VoicePage() {
         if (el) el.scrollTop = chat.length > 1 ? el.scrollHeight : 0;
     }, [chat.length, bigText]);
 
-    // 손님이 화면을 만지면 "기다리는 중" 단계를 처음부터 다시 세요 (시연 버튼은 제외)
-    useEffect(() => {
-        const onTouch = (e) => {
-            if (!e.target.closest?.('.demo-panel')) idleStage.current = 0;
-        };
-        window.addEventListener('pointerdown', onTouch);
-        return () => window.removeEventListener('pointerdown', onTouch);
-    }, []);
-
     // 아무 입력이 없을 때: 30초 → 1분 → 1분 30초 (담은 메뉴는 그대로 둬요)
-    const onIdle = useCallback(() => {
-        if (idleStage.current >= script.idleSteps.length) return;
-        const stage = idleStage.current;
-        idleStage.current += 1;
-        const extra =
-            stage === 1
-                ? { idle: true, choices: [{ action: 'call', label: '직원 호출', kind: 'staff', full: true, reason: '오래 머무름' }] }
-                : { idle: true };
-        ai(script.idleSteps[stage], extra);
-    }, [ai]);
-    useIdleTimer(onIdle, 30000, true, true);
+    const onIdleStep = useCallback(
+        (stage) => {
+            const extra =
+                stage === 1
+                    ? { idle: true, choices: [{ action: 'call', label: '직원 호출', kind: 'staff', full: true, reason: '오래 머무름' }] }
+                    : { idle: true };
+            ai(script.idleSteps[stage], extra);
+        },
+        [ai],
+    );
+    const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length);
 
     // 직원 호출: 매장 화면에 바로 알림이 가고, 텔로가 말풍선으로 알려줘요
     const callNow = (reason) => {
@@ -217,44 +208,54 @@ export default function VoicePage() {
         ai(useSessionStore.getState().cart.length ? script.calledWithCart : script.called);
     };
 
-    // 질문에 말로 답한 것처럼 진행 (시연용: 옵션은 기본값, 추천은 첫 번째 메뉴)
+    // 버튼 질문에 말로 답한 것처럼 진행 (시연용: ★ 기본 버튼, 온도는 아이스, 추천은 두 번째 메뉴)
+    // "더 필요한 게 있나요?"는 ★[아니요] → 주문 확인으로 가요. 더 주문하려면 [네]를 누르면 마이크가 켜져요
+    // 추천 질문은 손님이 다른 메뉴를 말하는 흐름이라 (명세서 3B) 대본으로 넘어가요
     const answerByVoice = (message) => {
-        if (message.ask === 'more') {
-            return false; // "더 필요한 게 있나요?" 뒤에 말하면 바로 다음 메뉴 주문으로 받아요
-        }
+        if (message.ask === 'recommend') return false;
         const choice =
-            message.ask === 'recommend'
-                ? message.choices[1]
-                : message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
-        const said = message.ask === 'recommend' ? `${choice.label}요` : withYo(choice.said ?? choice.label);
+            message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
+        let said = withYo(choice.said ?? choice.label);
+        if (message.ask === 'more') said = choice.said; // "네" · "아니요" 그대로
         onChoice(message, choice, said);
         return true;
     };
 
     const onMic = () => {
+        if (thinking) return;
+        // 말이 끝나면 잠깐 "확인 중"을 거쳐 대답해요 (실제로는 Gemini 분석을 기다리는 시간)
         listen(() => {
-            const { voiceStep, messages } = useSessionStore.getState();
-            const last = messages[messages.length - 1];
-            setFailCount(0);
-
-            // 답을 기다리는 질문이 있으면 말로 답한 걸로 처리
-            if (last?.who === 'ai' && ASKS.includes(last.ask) && answerByVoice(last)) return;
-
-            const lastStep = script.steps.length - 1;
-            const step = script.steps[Math.min(voiceStep, lastStep)];
-            me(step.user);
-
-            if (step.recommend != null) {
-                recommend(step.recommend);
-            } else if (step.itemId) {
-                // 말에서 알아들은 옵션(preset)과 수량(qty)은 건너뛰고 나머지만 물어봐요
-                const picked = { ...(step.preset ?? {}), ...(step.qty ? { qty: step.qty } : {}) };
-                askOption(findItem(step.itemId), picked, step.ai);
-            } else {
-                ai(step.ai);
-            }
-            setVoiceStep(Math.min(voiceStep + 1, lastStep));
+            setThinking(true);
+            setTimeout(() => {
+                setThinking(false);
+                handleSpeech();
+            }, 700);
         });
+    };
+
+    // 들은 말을 대본대로 처리해요
+    const handleSpeech = () => {
+        const { voiceStep, messages } = useSessionStore.getState();
+        const last = messages[messages.length - 1];
+        setFailCount(0);
+
+        // 답을 기다리는 질문이 있으면 말로 답한 걸로 처리
+        if (last?.who === 'ai' && ASKS.includes(last.ask) && answerByVoice(last)) return;
+
+        const lastStep = script.steps.length - 1;
+        const step = script.steps[Math.min(voiceStep, lastStep)];
+        me(step.user);
+
+        if (step.recommend != null) {
+            recommend(step.recommend);
+        } else if (step.itemId) {
+            // 말에서 알아들은 옵션(preset)과 수량(qty)은 건너뛰고 나머지만 물어봐요
+            const picked = { ...(step.preset ?? {}), ...(step.qty ? { qty: step.qty } : {}) };
+            askOption(findItem(step.itemId), picked, step.ai);
+        } else {
+            ai(step.ai);
+        }
+        setVoiceStep(Math.min(voiceStep + 1, lastStep));
     };
 
     // 시연 버튼: 음성 인식 실패 (1·2번째는 다시 말해 달라고, 3번째는 메뉴판·직원 호출 버튼)
@@ -271,7 +272,7 @@ export default function VoicePage() {
             ai(script.failThird, {
                 warn: true,
                 choices: [
-                    { action: 'menu', label: '메뉴판', kind: 'gbtn' },
+                    { action: 'menu', label: '메뉴판', kind: 'gbtn', book: true },
                     { action: 'call', label: '직원 호출', kind: 'staff' },
                 ],
             });
@@ -340,6 +341,7 @@ export default function VoicePage() {
     // 지금 텔로가 어떤 상태인지
     let statusKey = 'wait';
     if (listening) statusKey = 'listen';
+    else if (thinking) statusKey = 'check';
     else if (last?.who === 'ai' && last.idle) statusKey = 'idle';
     else if (last?.who === 'ai' && last.warn) statusKey = 'fail';
     else if (last?.who === 'ai' && (last.ask === 'option' || last.ask === 'recommend')) statusKey = 'check';
@@ -476,7 +478,10 @@ export default function VoicePage() {
                                                     disabled={locked}
                                                     onClick={() => onChoice(m, c)}
                                                 >
-                                                    <span>{c.label}</span>
+                                                    <span className="voice-choice__main">
+                                                        {c.book && <BookIcon size={20} />}
+                                                        {c.label}
+                                                    </span>
                                                     {c.sub && <span className="voice-choice__sub">{c.sub}</span>}
                                                 </button>
                                             ))}
@@ -493,7 +498,7 @@ export default function VoicePage() {
                     <div className="voice-mic">
                         <span className="voice-mic__text">
                             <span className="voice-mic__label">
-                                {listening ? '듣고 있어요…' : failCount > 0 ? '다시 말해 볼까요?' : '누르고 말해 주세요'}
+                                {listening ? '듣고 있어요…' : thinking ? '확인하고 있어요…' : failCount > 0 ? '다시 말해 볼까요?' : '누르고 말해 주세요'}
                             </span>
                             <span className="voice-mic__sub">
                                 {listening ? '천천히 말해 주세요' : '예: 아아 하나 주세요'}
@@ -503,6 +508,7 @@ export default function VoicePage() {
                             type="button"
                             className={`voice-mic__btn ${listening ? 'is-listening' : ''}`}
                             aria-label="말하기"
+                            disabled={thinking}
                             onClick={onMic}
                         >
                             <MicIcon color="#fff" />
@@ -523,6 +529,10 @@ export default function VoicePage() {
                     <BigButton variant="outline" onClick={leave}>
                         그만할게요
                     </BigButton>
+                    <button type="button" className="sheet-mic" onClick={() => listen(leave)}>
+                        <MicIcon size={20} />
+                        {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.leaveVoice}"`}
+                    </button>
                 </BottomSheet>
             </div>
 
@@ -534,7 +544,7 @@ export default function VoicePage() {
                     <button type="button" className="demo-btn" onClick={onFail}>
                         음성 인식 실패 (3번 누르기)
                     </button>
-                    <button type="button" className="demo-btn" onClick={onIdle}>
+                    <button type="button" className="demo-btn" onClick={nextIdle}>
                         가만히 있음 (30초 · 1분 · 1분 30초)
                     </button>
                 </div>
