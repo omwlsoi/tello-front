@@ -11,6 +11,8 @@ import useSpeechToText from '../hooks/useSpeechToText';
 import { getCartCount, getCartTotal, getChoiceLabel, useSessionStore } from '../stores/sessionStore';
 import formatPrice from '../utils/formatPrice';
 import script from '../mocks/messages.json';
+import { confirmOrder } from '../api/order'; // 👈 1. 최종 주문 확정 API 임포트
+import { v4 as uuidv4 } from 'uuid'; // 👈 2. 중복 방지 키 생성을 위한 uuid 임포트 (설치 안 되어 있다면 아래 안내 참고)
 import './ConfirmPage.css';
 
 // 소리로 읽을 때: "핫" → "따뜻하게", 가운뎃점 → 쉼표
@@ -40,7 +42,7 @@ export default function ConfirmPage() {
     const cart = useSessionStore((s) => s.cart);
     const from = useSessionStore((s) => s.from);
     const changeQty = useSessionStore((s) => s.changeQty);
-    const placeOrder = useSessionStore((s) => s.placeOrder);
+    const startOver = useSessionStore((s) => s.startOver); // 필요시 초기화용
     const callStaff = useSessionStore((s) => s.callStaff);
     const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
@@ -50,6 +52,7 @@ export default function ConfirmPage() {
     const [idleStage, setIdleStage] = useState(0); // 무응답 몇 번째 안내인지 (0 · 1 · 2)
     const [removeLine, setRemoveLine] = useState(null); // 뺄지 물어보는 메뉴
     const [toast, setToast] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false); // 👈 주문 요청 중 중복 클릭 방지
     const clearToast = useCallback(() => setToast(''), []);
     const spokeRef = useRef(false);
 
@@ -75,9 +78,47 @@ export default function ConfirmPage() {
     );
     const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length);
 
-    const submit = () => {
-        const order = placeOrder();
-        if (order) navigate('/status');
+    // 👈 3. 백엔드 API 연동이 포함된 최종 주문 확정 함수 수정
+    const submit = async () => {
+        if (isSubmitting || cart.length === 0) return;
+        setIsSubmitting(true);
+
+        try {
+            const sessionId = localStorage.getItem('sessionId');
+            const sessionToken = localStorage.getItem('sessionToken');
+
+            if (!sessionId || !sessionToken) {
+                alert("세션 정보가 없습니다. 처음부터 다시 시작해 주세요.");
+                navigate('/');
+                return;
+            }
+
+            // 중복 방지용 Idempotency-Key 생성 (uuid가 없다면 Date.now() 등 대체 가능)
+            const idempotencyKey = typeof uuidv4 === 'function' ? uuidv4() : `key_${Date.now()}`;
+
+            // 백엔드로 최종 주문 확정 요청 전송 (POST /api/orders)[cite: 16]
+            const response = await confirmOrder(sessionId, sessionToken, idempotencyKey);
+            
+            console.log("주문 확정 성공:", response);
+
+            // 주문 성공 시 상태 페이지로 이동하면서 orderId 전달 (필요시 라우터 설정에 맞게 변경)
+            navigate(`/status/${response.orderId}`);
+
+        } catch (error) {
+            console.error("주문 확정 실패:", error);
+            const errCode = error.response?.data?.code;
+            const errMsg = error.response?.data?.message;
+
+            if (errCode === 'CART_EMPTY') {
+                alert("장바구니가 비어 있습니다.");
+            } else if (errCode === 'ORDER_ALREADY_CONFIRMED') {
+                alert("이미 주문이 확정된 세션입니다.");
+            } else {
+                alert(errMsg || "주문 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // 버튼 또는 말로 "맞아요" (STEP 8)
@@ -186,7 +227,7 @@ export default function ConfirmPage() {
                     <p className="ai-note">
                         <InfoIcon />
                         <span>
-                            텔로가 잘못 알아들을 수 있어요.{' '}
+                            텔로가 잘못 알아들 수 있어요.{' '}
                             <br />
                             확인해 주세요
                         </span>
@@ -194,14 +235,14 @@ export default function ConfirmPage() {
                 </main>
 
                 <div className="phone__footer">
-                    <BigButton disabled={!cart.length} onClick={submit}>
-                        맞아요, 주문할게요
+                    <BigButton disabled={!cart.length || isSubmitting} onClick={submit}>
+                        {isSubmitting ? '주문 처리 중…' : '맞아요, 주문할게요'}
                     </BigButton>
-                    <BigButton variant="outline" onClick={() => navigate(backTo)}>
+                    <BigButton variant="outline" onClick={() => navigate(backTo)} disabled={isSubmitting}>
                         고칠래요
                     </BigButton>
                     {cart.length > 0 && (
-                        <button type="button" className="sheet-mic confirm-mic" onClick={sayYes}>
+                        <button type="button" className="sheet-mic confirm-mic" onClick={sayYes} disabled={isSubmitting}>
                             <MicIcon size={20} />
                             {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.confirmYes}"`}
                         </button>

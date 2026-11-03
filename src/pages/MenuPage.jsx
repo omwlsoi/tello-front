@@ -19,6 +19,7 @@ import {
 import formatPrice from '../utils/formatPrice';
 import menu from '../mocks/menu.json';
 import script from '../mocks/messages.json';
+import { addCartItem } from '../api/session'; // 👈 1. 백엔드 장바구니 API 임포트
 import './MenuPage.css';
 
 // 수량 (1개가 기본 ★, 4개 이상은 주문 확인 화면의 [+]로)
@@ -85,12 +86,31 @@ export default function MenuPage() {
             return { ...prev, picked };
         });
 
-    const onAddWithOptions = () => {
+    // 👈 2. 서버 API 연동이 포함된 장바구니 담기 함수 수정
+    const onAddWithOptions = async () => {
         const { item, picked } = optionPick;
         const { qty, ...options } = picked;
-        addItem(item.id, options, qty);
-        added(item.name, getOptionLabel(options), qty);
-        setOptionPick(null);
+
+        try {
+            // Local 상태 업데이트 (프론트 화면 즉시 반영용)
+            addItem(item.id, options, qty);
+
+            // 서버 세션 정보 가져오기
+            const sessionId = localStorage.getItem('sessionId');
+            const sessionToken = localStorage.getItem('sessionToken');
+
+            if (sessionId && sessionToken) {
+                // 백엔드 장바구니 담기 API 호출
+                await addCartItem(sessionId, sessionToken, item.id, qty, options);
+            }
+
+            added(item.name, getOptionLabel(options), qty);
+        } catch (error) {
+            console.error("장바구니 담기 서버 전송 실패:", error);
+            // 필요 시 에러 토스트나 안내 처리
+        } finally {
+            setOptionPick(null);
+        }
     };
 
     // 지금 보여줄 옵션 묶음 (얼음은 아이스를 골랐을 때만)

@@ -19,19 +19,16 @@ import {
     useSessionStore,
 } from '../stores/sessionStore';
 import script from '../mocks/messages.json';
+import { addCartItem } from '../api/session'; // 👈 백엔드 장바구니 추가 API 임포트
 import './VoicePage.css';
 
-// "더 필요한 게 있나요?" 다음에 나오는 버튼
-// kind: lime(파랑 채움 = 기본 ★) | gbtn(흰 바탕) | staff(직원 호출), sub: 버튼 안 작은 설명
 const MORE_CHOICES = [
     { action: 'more', label: '네', sub: '더 주문할게요', kind: 'gbtn', said: '네' },
     { action: 'done', label: '아니요', sub: '주문 확인하기', kind: 'lime', said: '아니요' },
 ];
 
-// 수량은 옵션을 다 고른 뒤 마지막에 물어요 (1개가 기본 ★, 4개 이상은 주문 확인 화면의 [+]로)
 const QTY_CHOICES = [1, 2, 3];
 
-// 텔로 상태 (제목 옆 점 색 + 표정)
 const STATUS = {
     wait: { label: '대기 중', tone: 'gray', face: 'smile' },
     listen: { label: '듣는 중', tone: 'blue', face: 'listen' },
@@ -41,25 +38,19 @@ const STATUS = {
     idle: { label: '기다리는 중', tone: 'gray', face: 'sad' },
 };
 
-// 답을 기다리는 질문 (버튼을 누르거나 말로 답해요)
 const ASKS = ['option', 'more', 'recommend'];
 
 const fill = (text, values) =>
     Object.entries(values).reduce((out, [k, v]) => out.replace(`{${k}}`, v), text);
 
-// 받침이 있으면 "보통이요", 없으면 "아이스요"
 const withYo = (word) => {
     const code = word.charCodeAt(word.length - 1) - 0xac00;
     const hasBatchim = code >= 0 && code <= 11171 && code % 28 !== 0;
     return `${word}${hasBatchim ? '이요' : '요'}`;
 };
 
-// 소리로 읽을 때: "핫" → "따뜻하게", 가운뎃점 → 쉼표
 const toSpoken = (opt) => opt.replace(/핫/g, '따뜻하게').replace(/ · /g, ', ');
 
-// 2. 말로 주문하기
-// 첫 주문은 말로, 옵션(크기 → 온도 → 얼음 → 수량)과 추가 주문 여부는 버튼을 누르거나 말로 답해요.
-// 마이크를 누를 때마다 대본(messages.json)대로 대화가 한 단계씩 진행돼요.
 export default function VoicePage() {
     const navigate = useNavigate();
     const cart = useSessionStore((s) => s.cart);
@@ -77,11 +68,11 @@ export default function VoicePage() {
     const { speak } = useTextToSpeech();
     const { listening, listen } = useSpeechToText();
 
-    const [sheet, setSheet] = useState(null); // null | 'leave'
+    const [sheet, setSheet] = useState(null);
     const [toast, setToast] = useState('');
     const clearToast = useCallback(() => setToast(''), []);
     const chatRef = useRef(null);
-    const [thinking, setThinking] = useState(false); // 말이 끝난 뒤 답을 만드는 중 (상태: 확인 중)
+    const [thinking, setThinking] = useState(false);
 
     const ai = useCallback(
         (text, extra = {}, spoken = text) => {
@@ -92,11 +83,26 @@ export default function VoicePage() {
     );
     const me = useCallback((text, extra = {}) => pushMessage({ who: 'me', text, ...extra }), [pushMessage]);
 
-    // 옵션을 다 고르면 바로 담고, 담기 완료 카드 + "더 필요한 게 있나요?"
+    // 👈 서버 연동이 추가된 장바구니 담기 및 추가 주문 물기 함수
     const addAndAskMore = useCallback(
-        (item, picked) => {
+        async (item, picked) => {
             const { qty = 1, ...options } = picked;
+            
+            // 1. 프론트엔드 로컬 상태 반영
             addItem(item.id, options, qty);
+
+            try {
+                // 2. 백엔드 서버 장바구니 API 동기화
+                const sessionId = localStorage.getItem('sessionId');
+                const sessionToken = localStorage.getItem('sessionToken');
+
+                if (sessionId && sessionToken) {
+                    await addCartItem(sessionId, sessionToken, item.id, qty, options);
+                }
+            } catch (error) {
+                console.error("음성 주문 장바구니 서버 전송 실패:", error);
+            }
+
             const opt = getOptionLabel(options);
             const extra = OPTIONS.size.choices.find((c) => c.id === options.size)?.extra ?? 0;
             const card = {
@@ -111,7 +117,6 @@ export default function VoicePage() {
         [addItem, ai],
     );
 
-    // 빠진 옵션만 하나씩 묻고(크기 → 온도 → 얼음 → 수량), 말에 들어 있던 옵션은 건너뛰어요
     const askOption = useCallback(
         (item, picked, lead = '') => {
             const key = nextOption(item, picked) ?? (picked.qty == null ? 'qty' : null);
@@ -147,7 +152,6 @@ export default function VoicePage() {
         [addAndAskMore, ai],
     );
 
-    // 추천: 한 번에 2개까지 + [다른 추천]. 두 번 거절하면 메뉴판을 열어요
     const recommend = useCallback(
         (round) => {
             const rec = script.recommend[round];
@@ -171,7 +175,6 @@ export default function VoicePage() {
         [ai, navigate],
     );
 
-    // 첫 인사 + 사용 방법 안내
     useEffect(() => {
         setFrom('voice');
         if (useSessionStore.getState().messages.length === 0) {
@@ -183,13 +186,11 @@ export default function VoicePage() {
         }
     }, [ai, setFrom]);
 
-    // 새 말풍선이 생기면 맨 아래로 (첫 인사만 있을 땐 사용 방법을 위에서부터 읽게)
     useEffect(() => {
         const el = chatRef.current;
         if (el) el.scrollTop = chat.length > 1 ? el.scrollHeight : 0;
     }, [chat.length, bigText]);
 
-    // 아무 입력이 없을 때: 30초 → 1분 → 1분 30초 (담은 메뉴는 그대로 둬요)
     const onIdleStep = useCallback(
         (stage) => {
             const extra =
@@ -202,28 +203,23 @@ export default function VoicePage() {
     );
     const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length);
 
-    // 직원 호출: 매장 화면에 바로 알림이 가고, 텔로가 말풍선으로 알려줘요
     const callNow = (reason) => {
         callStaff(reason);
         ai(useSessionStore.getState().cart.length ? script.calledWithCart : script.called);
     };
 
-    // 버튼 질문에 말로 답한 것처럼 진행 (시연용: ★ 기본 버튼, 온도는 아이스, 추천은 두 번째 메뉴)
-    // "더 필요한 게 있나요?"는 ★[아니요] → 주문 확인으로 가요. 더 주문하려면 [네]를 누르면 마이크가 켜져요
-    // 추천 질문은 손님이 다른 메뉴를 말하는 흐름이라 (명세서 3B) 대본으로 넘어가요
     const answerByVoice = (message) => {
         if (message.ask === 'recommend') return false;
         const choice =
             message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
         let said = withYo(choice.said ?? choice.label);
-        if (message.ask === 'more') said = choice.said; // "네" · "아니요" 그대로
+        if (message.ask === 'more') said = choice.said;
         onChoice(message, choice, said);
         return true;
     };
 
     const onMic = () => {
         if (thinking) return;
-        // 말이 끝나면 잠깐 "확인 중"을 거쳐 대답해요 (실제로는 Gemini 분석을 기다리는 시간)
         listen(() => {
             setThinking(true);
             setTimeout(() => {
@@ -233,13 +229,11 @@ export default function VoicePage() {
         });
     };
 
-    // 들은 말을 대본대로 처리해요
     const handleSpeech = () => {
         const { voiceStep, messages } = useSessionStore.getState();
         const last = messages[messages.length - 1];
         setFailCount(0);
 
-        // 답을 기다리는 질문이 있으면 말로 답한 걸로 처리
         if (last?.who === 'ai' && ASKS.includes(last.ask) && answerByVoice(last)) return;
 
         const lastStep = script.steps.length - 1;
@@ -249,7 +243,6 @@ export default function VoicePage() {
         if (step.recommend != null) {
             recommend(step.recommend);
         } else if (step.itemId) {
-            // 말에서 알아들은 옵션(preset)과 수량(qty)은 건너뛰고 나머지만 물어봐요
             const picked = { ...(step.preset ?? {}), ...(step.qty ? { qty: step.qty } : {}) };
             askOption(findItem(step.itemId), picked, step.ai);
         } else {
@@ -258,7 +251,6 @@ export default function VoicePage() {
         setVoiceStep(Math.min(voiceStep + 1, lastStep));
     };
 
-    // 시연 버튼: 음성 인식 실패 (1·2번째는 다시 말해 달라고, 3번째는 메뉴판·직원 호출 버튼)
     const onFail = () => {
         const { messages } = useSessionStore.getState();
         const pending = [...messages].reverse().find((m) => m.who === 'ai' && m.ask === 'option');
@@ -279,7 +271,6 @@ export default function VoicePage() {
             return;
         }
         ai(count === 1 ? script.failOnce : script.failTwice);
-        // 옵션 질문 중이었다면 같은 질문과 버튼을 다시 보여줘요
         if (waiting) {
             const again = { ...waiting };
             delete again.id;
@@ -295,7 +286,6 @@ export default function VoicePage() {
                 [message.option]: choice.value,
             });
         } else if (choice.action === 'pick') {
-            // 추천 메뉴를 고르면 옵션 흐름으로 (STEP 4)
             const item = findItem(choice.value);
             me(said ?? choice.label);
             askOption(item, {}, fill(script.picked, { name: item.name }));
@@ -303,12 +293,10 @@ export default function VoicePage() {
             me(choice.label);
             recommend(message.round + 1);
         } else if (choice.action === 'more') {
-            // 네 → 바로 다음 메뉴를 말로 받아요
             me(said ?? choice.label);
             ai(script.moreYes);
             onMic();
         } else if (choice.action === 'done') {
-            // 아니요 → 주문 확인으로
             me(said ?? choice.label);
             ai(script.moreNo);
             setTimeout(() => navigate('/confirm'), 900);
@@ -319,7 +307,6 @@ export default function VoicePage() {
         }
     };
 
-    // 뒤로가기: 담은 메뉴가 있으면 한 번 더 물어봐요
     const goBack = () => {
         if (cart.length) {
             setSheet('leave');
@@ -338,7 +325,6 @@ export default function VoicePage() {
     const lastIndex = chat.length - 1;
     const last = chat[lastIndex];
 
-    // 지금 텔로가 어떤 상태인지
     let statusKey = 'wait';
     if (listening) statusKey = 'listen';
     else if (thinking) statusKey = 'check';
@@ -374,7 +360,6 @@ export default function VoicePage() {
                     }
                 >
                     {bigText ? (
-                        // 큰 글씨 모드: [텔로] 말로 주문 / ● 지금 상태 (위쪽 텔로 줄 대신)
                         <span className="app-header__title voice-title--big">
                             <Tello face={status.face} size={44} className="voice-title__tello" />
                             <span className="voice-title__stack">
@@ -407,7 +392,6 @@ export default function VoicePage() {
                 <div className="voice-chat glass" ref={chatRef} aria-live="polite">
                     <div className="voice-chat__list">
                         {chat.map((m, i) => {
-                            // 손님이 답한 질문만 잠가요 (텔로 안내가 뒤에 와도 버튼은 계속 누를 수 있어요)
                             const locked = chat.slice(i + 1).some((next) => next.who === 'me');
                             if (m.who === 'me') {
                                 return (

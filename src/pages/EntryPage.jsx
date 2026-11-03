@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowIcon, BrandHeader, HandIcon, MicIcon, Tello, WaveIcon } from '../components/common/Header';
 import { useSessionStore } from '../stores/sessionStore';
+import { createSession } from '../api/session'; // 👈 1. 세션 생성 API 임포트
 import './EntryPage.css';
 
 // 1. 시작 화면: QR로 들어와 주문 방법을 고르는 화면
-// (사용 방법 안내는 말로 주문하기 첫 인사에서 해요)
 export default function EntryPage() {
     const navigate = useNavigate();
     const setFrom = useSessionStore((s) => s.setFrom);
@@ -13,9 +14,35 @@ export default function EntryPage() {
     const resetDemo = useSessionStore((s) => s.resetDemo);
     const bigText = useSessionStore((s) => s.bigText);
 
-    const start = (mode) => {
-        setFrom(mode);
-        navigate(mode === 'voice' ? '/voice' : '/menu');
+    const [isLoading, setIsLoading] = useState(false); // 로딩 상태 추가 (중복 클릭 방지)
+
+    // 👈 2. API 연동을 위한 start 함수 수정
+    const start = async (mode) => {
+        if (isLoading) return;
+        setIsLoading(true);
+
+        try {
+            // 임시 매장 ID (실제 서비스 환경이나 QR 파라미터에 맞게 수정 필요)
+            const storeId = "store_1"; 
+
+            // 백엔드에 주문 세션 생성 요청
+            const sessionData = await createSession(storeId);
+            const { sessionId, sessionToken } = sessionData;
+
+            // 로컬 스토리지에 세션 정보 저장 (이후 API 요청 시 인증 등에 사용)
+            localStorage.setItem('sessionId', sessionId);
+            localStorage.setItem('sessionToken', sessionToken);
+
+            // 전역 상태에 모드 설정 후 페이지 이동
+            setFrom(mode);
+            navigate(mode === 'voice' ? '/voice' : '/menu');
+
+        } catch (error) {
+            console.error("세션 생성 실패:", error);
+            alert("주문 세션을 시작하는 데 실패했습니다. 다시 시도해 주세요.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -56,7 +83,12 @@ export default function EntryPage() {
 
                     {bigText ? (
                         <main className="entry-options">
-                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
+                            <button 
+                                type="button" 
+                                className="entry-card entry-card--voice glass" 
+                                onClick={() => start('voice')}
+                                disabled={isLoading} // 로딩 중 클릭 방지
+                            >
                                 <span className="entry-card__tag">추천</span>
                                 <span className="entry-card__row">
                                     <span className="entry-card__name">
@@ -82,7 +114,12 @@ export default function EntryPage() {
                                 </span>
                             </button>
 
-                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
+                            <button 
+                                type="button" 
+                                className="entry-card entry-card--menu glass" 
+                                onClick={() => start('menu')}
+                                disabled={isLoading} // 로딩 중 클릭 방지
+                            >
                                 <span className="entry-card__name entry-card__name--menu">
                                     <span className="entry-card__mark entry-card__mark--blue">눌러서</span>
                                     <br />
@@ -101,7 +138,12 @@ export default function EntryPage() {
                         </main>
                     ) : (
                         <main className="entry-options">
-                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
+                            <button 
+                                type="button" 
+                                className="entry-card entry-card--voice glass" 
+                                onClick={() => start('voice')}
+                                disabled={isLoading}
+                            >
                                 <span className="entry-card__tag">추천</span>
                                 <span className="entry-card__row">
                                     <span className="entry-card__name">
@@ -125,7 +167,12 @@ export default function EntryPage() {
                                 </span>
                             </button>
 
-                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
+                            <button 
+                                type="button" 
+                                className="entry-card entry-card--menu glass" 
+                                onClick={() => start('menu')}
+                                disabled={isLoading}
+                            >
                                 <span className="entry-card__name entry-card__name--menu">
                                     <span className="entry-card__mark entry-card__mark--blue">눌러서</span> 주문하기
                                 </span>
