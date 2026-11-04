@@ -1,9 +1,12 @@
 import axios from 'axios';
 
+// 백엔드 주소는 .env.local의 VITE_API_BASE_URL에서 읽어요 (없으면 로컬 서버)
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:9999',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9999/api',
   headers: {
     'Content-Type': 'application/json',
+    // ngrok 무료 주소의 경고 페이지 없이 바로 응답받기
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
