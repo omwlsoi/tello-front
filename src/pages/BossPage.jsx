@@ -8,6 +8,7 @@ import {
     completeHelpRequest,
 } from '../api/admin';
 import storeInfo from '../mocks/store.json';
+import formatOrderNumber from '../utils/formatOrderNumber';
 import './BossPage.css';
 
 // 상태별 안내·버튼 맵핑 (백엔드 status: pending, preparing, completed 대응)
@@ -130,7 +131,7 @@ export default function BossPage() {
                                     직원 호출 · {ago(call.createdAt, now) === '방금' ? '지금' : ago(call.createdAt, now)}
                                 </span>
                                 <span className="boss-call__title">
-                                    {call.orderNumber ? `${call.orderNumber}번 손님이` : '주문 중인 손님이'} 도움을 요청했어요
+                                    {call.orderNumber ? `${formatOrderNumber(call.orderNumber)}번 손님이` : '주문 중인 손님이'} 도움을 요청했어요
                                 </span>
                             </span>
                             <span className="boss-call__reason">세션 ID: {call.sessionId?.slice(0, 8)}...</span>
@@ -166,7 +167,7 @@ export default function BossPage() {
                                         </span>
                                     </div>
                                     <span className="boss-card__no">
-                                        {order.orderNumber}
+                                        {formatOrderNumber(order.orderNumber)}
                                         <small>번</small>
                                     </span>
                                     <div className="boss-card__items">
