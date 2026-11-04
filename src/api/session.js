@@ -59,3 +59,13 @@ export async function endSession(sessionId, sessionToken) {
   );
   return response.data;
 }
+
+// 8. 메시지 분석 및 주문 처리 (POST /api/sessions/{sessionId}/messages)[cite: 3]
+export async function analyzeMessage(sessionId, sessionToken, text) {
+  const response = await apiClient.post(
+    `/sessions/${sessionId}/messages`,
+    { text },
+    { headers: { Authorization: `Bearer ${sessionToken}` } }
+  );
+  return response.data;
+}
