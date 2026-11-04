@@ -17,7 +17,7 @@ export async function getSessionCart(sessionId, sessionToken) {
 // 3. 장바구니 메뉴 추가 (POST /api/sessions/{sessionId}/cart/items)[cite: 1]
 export async function addCartItem(sessionId, sessionToken, menuId, quantity, selectedOptions) {
   const response = await apiClient.post(
-    `/sessions/{sessionId}/cart/items`,
+    `/sessions/${sessionId}/cart/items`,
     { menuId, quantity, selectedOptions },
     { headers: { Authorization: `Bearer ${sessionToken}` } }
   );
@@ -27,7 +27,7 @@ export async function addCartItem(sessionId, sessionToken, menuId, quantity, sel
 // 4. 장바구니 항목 수정 (PATCH /api/sessions/{sessionId}/cart/items/{itemId})[cite: 1]
 export async function updateCartItem(sessionId, sessionToken, itemId, quantity, selectedOptions) {
   const response = await apiClient.patch(
-    `/sessions/{sessionId}/cart/items/${itemId}`,
+    `/sessions/${sessionId}/cart/items/${itemId}`,
     { quantity, selectedOptions },
     { headers: { Authorization: `Bearer ${sessionToken}` } }
   );
@@ -36,7 +36,7 @@ export async function updateCartItem(sessionId, sessionToken, itemId, quantity, 
 
 // 5. 장바구니 항목 삭제 (DELETE /api/sessions/{sessionId}/cart/items/{itemId})[cite: 1]
 export async function deleteCartItem(sessionId, sessionToken, itemId) {
-  const response = await apiClient.delete(`/sessions/{sessionId}/cart/items/${itemId}`, {
+  const response = await apiClient.delete(`/sessions/${sessionId}/cart/items/${itemId}`, {
     headers: { Authorization: `Bearer {sessionToken}`.replace('{sessionToken}', sessionToken) },
   });
   return response.data;
