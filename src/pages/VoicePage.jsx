@@ -537,10 +537,6 @@ export default function VoicePage() {
                     <BigButton variant="outline" onClick={leave}>
                         그만할게요
                     </BigButton>
-                    <button type="button" className="sheet-mic" onClick={() => listen(leave)}>
-                        <MicIcon size={20} />
-                        {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.leaveVoice}"`}
-                    </button>
                 </BottomSheet>
             </div>
 

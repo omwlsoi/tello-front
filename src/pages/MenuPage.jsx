@@ -7,7 +7,6 @@ import Toast from '../components/common/Toast';
 import MenuCard, { FoodTile } from '../components/order/MenuCard';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
-import useSpeechToText from '../hooks/useSpeechToText';
 import {
     OPTIONS,
     getCartCount,
@@ -34,7 +33,6 @@ export default function MenuPage() {
     const startOver = useSessionStore((s) => s.startOver);
     const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
-    const { listening, listen } = useSpeechToText();
 
     const [tab, setTab] = useState(menu.categories[0].id);
     const [toast, setToast] = useState('');
@@ -291,10 +289,6 @@ export default function MenuPage() {
                     <BigButton variant="outline" onClick={leave}>
                         그만할게요
                     </BigButton>
-                    <button type="button" className="sheet-mic" onClick={() => listen(leave)}>
-                        <MicIcon size={20} />
-                        {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.leaveVoice}"`}
-                    </button>
                 </BottomSheet>
             </div>
 
