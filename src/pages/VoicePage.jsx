@@ -9,6 +9,7 @@ import { FoodTile } from '../components/order/MenuCard';
 import useSpeechToText from '../hooks/useSpeechToText';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
+import breakLines from '../utils/breakLines';
 import formatPrice from '../utils/formatPrice';
 import {
     OPTIONS,
@@ -19,16 +20,24 @@ import {
     useSessionStore,
 } from '../stores/sessionStore';
 import script from '../mocks/messages.json';
-import { addCartItem } from '../api/session'; // 👈 백엔드 장바구니 추가 API 임포트
+import { addCartItem } from '../api/session';          // 👈 서버 장바구니 추가 API 연동
+import { createHelpRequest } from '../api/order';     // 👈 서버 직원 호출 API 연동
 import './VoicePage.css';
 
+// "더 필요한 게 있나요?" 다음에 나오는 버튼
 const MORE_CHOICES = [
     { action: 'more', label: '네', sub: '더 주문할게요', kind: 'gbtn', said: '네' },
     { action: 'done', label: '아니요', sub: '주문 확인하기', kind: 'lime', said: '아니요' },
 ];
 
-const QTY_CHOICES = [1, 2, 3];
+// 수량 선택
+const QTY_CHOICES = [
+    { action: 'option', value: 1, said: '1개', label: '1개', kind: 'lime' },
+    { action: 'option', value: 2, said: '2개', label: '2개', kind: 'gbtn' },
+    { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true },
+];
 
+// 텔로 상태
 const STATUS = {
     wait: { label: '대기 중', tone: 'gray', face: 'smile' },
     listen: { label: '듣는 중', tone: 'blue', face: 'listen' },
@@ -51,6 +60,7 @@ const withYo = (word) => {
 
 const toSpoken = (opt) => opt.replace(/핫/g, '따뜻하게').replace(/ · /g, ', ');
 
+// 2. 말로 주문하기 (백엔드 API 연동 버전)
 export default function VoicePage() {
     const navigate = useNavigate();
     const cart = useSessionStore((s) => s.cart);
@@ -83,24 +93,21 @@ export default function VoicePage() {
     );
     const me = useCallback((text, extra = {}) => pushMessage({ who: 'me', text, ...extra }), [pushMessage]);
 
-    // 👈 서버 연동이 추가된 장바구니 담기 및 추가 주문 물기 함수
+    // 🚀 서버 연동: 옵션을 다 고르면 프론트 장바구니 담기 + 서버 장바구니 API 동기화
     const addAndAskMore = useCallback(
         async (item, picked) => {
             const { qty = 1, ...options } = picked;
-            
-            // 1. 프론트엔드 로컬 상태 반영
             addItem(item.id, options, qty);
 
+            // 서버 API 동기화
             try {
-                // 2. 백엔드 서버 장바구니 API 동기화
                 const sessionId = localStorage.getItem('sessionId');
                 const sessionToken = localStorage.getItem('sessionToken');
-
                 if (sessionId && sessionToken) {
                     await addCartItem(sessionId, sessionToken, item.id, qty, options);
                 }
             } catch (error) {
-                console.error("음성 주문 장바구니 서버 전송 실패:", error);
+                console.error("음성 주문 서버 장바구니 담기 실패:", error);
             }
 
             const opt = getOptionLabel(options);
@@ -126,13 +133,7 @@ export default function VoicePage() {
             }
             const choices =
                 key === 'qty'
-                    ? QTY_CHOICES.map((n) => ({
-                          action: 'option',
-                          value: n,
-                          said: `${n}개`,
-                          label: `${n}개`,
-                          kind: n === 1 ? 'lime' : 'gbtn',
-                      }))
+                    ? QTY_CHOICES
                     : OPTIONS[key].choices.map((c) => ({
                           action: 'option',
                           value: c.id,
@@ -203,7 +204,17 @@ export default function VoicePage() {
     );
     const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length);
 
-    const callNow = (reason) => {
+    // 🚀 서버 연동: 직원 호출 API
+    const callNow = async (reason) => {
+        try {
+            const sessionId = localStorage.getItem('sessionId');
+            const sessionToken = localStorage.getItem('sessionToken');
+            if (sessionId && sessionToken) {
+                await createHelpRequest(sessionId, sessionToken);
+            }
+        } catch (error) {
+            console.error("직원 호출 서버 전송 실패:", error);
+        }
         callStaff(reason);
         ai(useSessionStore.getState().cart.length ? script.calledWithCart : script.called);
     };
@@ -211,7 +222,9 @@ export default function VoicePage() {
     const answerByVoice = (message) => {
         if (message.ask === 'recommend') return false;
         const choice =
-            message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
+            message.option === 'qty'
+                ? { action: 'option', value: 1, label: '1개' }
+                : message.choices.find((c) => c.kind === 'lime') ?? message.choices[message.choices.length - 1];
         let said = withYo(choice.said ?? choice.label);
         if (message.ask === 'more') said = choice.said;
         onChoice(message, choice, said);
@@ -361,17 +374,17 @@ export default function VoicePage() {
                 >
                     {bigText ? (
                         <span className="app-header__title voice-title--big">
-                            <Tello face={status.face} size={44} className="voice-title__tello" />
-                            <span className="voice-title__stack">
+                            <span className="voice-title__name">
                                 말로 주문
-                                <span className="voice-title__status">
-                                    <span className={`voice-dot voice-dot--${status.tone}`} />
-                                    {status.label}
-                                </span>
+                                <WaveIcon />
+                            </span>
+                            <span className={`voice-title__status voice-title__status--${status.tone}`}>
+                                <span className={`voice-dot voice-dot--${status.tone}`} />
+                                {status.label}
                             </span>
                         </span>
                     ) : (
-                        <span className="app-header__title">
+                        <span className="app-header__title voice-title">
                             말로 주문
                             <WaveIcon />
                         </span>
@@ -385,7 +398,7 @@ export default function VoicePage() {
                             <span className={`voice-dot voice-dot--${status.tone}`} />
                             <span className="eyebrow">{status.label}</span>
                         </span>
-                        <span className="voice-who__name">주문 받는 점원, 텔로</span>
+                        <span className="voice-who__name">주문 받는 점원, 텔로링</span>
                     </span>
                 </div>
 
@@ -399,14 +412,16 @@ export default function VoicePage() {
                                         key={m.id}
                                         className={`voice-bubble voice-bubble--me ${m.unheard ? 'voice-bubble--unheard' : ''}`}
                                     >
-                                        {m.text}
+                                        {breakLines(m.text)}
                                     </div>
                                 );
                             }
                             return (
                                 <div key={m.id} className="voice-msg">
                                     <div className={`voice-bubble ${m.warn ? 'voice-bubble--warn' : ''}`}>
-                                        <span>{m.text}</span>
+                                        <span>
+                                            {breakLines(m.guide && bigText ? m.text.replace(', ', ',\n') : m.text)}
+                                        </span>
                                         {m.card && (
                                             <div className="voice-card">
                                                 <FoodTile icon={m.card.icon} size={60} iconSize={54} />
@@ -420,7 +435,7 @@ export default function VoicePage() {
                                                 </span>
                                             </div>
                                         )}
-                                        {m.followUp && <span>{m.followUp}</span>}
+                                        {m.followUp && <span>{breakLines(m.followUp)}</span>}
                                     </div>
                                     {m.guide && (
                                         <>
@@ -438,7 +453,9 @@ export default function VoicePage() {
                                             </ol>
                                             {m.guideTip && (
                                                 <p className="voice-guide__tip">
-                                                    뭘 먹을지 모르겠으면 <b>"추천해 줘"</b>라고 말해 보세요.{' '}
+                                                    뭘 먹을지 모르겠으면
+                                                    <br />
+                                                    <b>"추천해 줘"</b>라고 말해 보세요.
                                                     <br />
                                                     말이 어려우면 위의{' '}
                                                     <span className="voice-guide__chip">
@@ -458,13 +475,14 @@ export default function VoicePage() {
                                                 <button
                                                     key={c.label}
                                                     type="button"
-                                                    className={`voice-choice voice-choice--${c.kind ?? 'gbtn'} ${c.full ? 'voice-choice--full' : ''}`}
-                                                    disabled={locked}
-                                                    onClick={() => onChoice(m, c)}
+                                                    className={`voice-choice voice-choice--${c.kind ?? 'gbtn'} ${c.full ? 'voice-choice--full' : ''} ${c.mic ? 'voice-choice--mic' : ''}`}
+                                                    disabled={locked || (c.mic && (listening || thinking))}
+                                                    aria-label={c.mic ? c.label : undefined}
+                                                    onClick={c.mic ? onMic : () => onChoice(m, c)}
                                                 >
                                                     <span className="voice-choice__main">
                                                         {c.book && <BookIcon size={20} />}
-                                                        {c.label}
+                                                        {c.mic ? <MicIcon size={bigText ? 40 : 30} color="currentColor" /> : c.label}
                                                     </span>
                                                     {c.sub && <span className="voice-choice__sub">{c.sub}</span>}
                                                 </button>
@@ -513,10 +531,6 @@ export default function VoicePage() {
                     <BigButton variant="outline" onClick={leave}>
                         그만할게요
                     </BigButton>
-                    <button type="button" className="sheet-mic" onClick={() => listen(leave)}>
-                        <MicIcon size={20} />
-                        {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.leaveVoice}"`}
-                    </button>
                 </BottomSheet>
             </div>
 

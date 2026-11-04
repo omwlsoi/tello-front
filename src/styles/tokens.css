@@ -93,6 +93,8 @@
 }
 
 .phone {
+    word-break: keep-all;
+    overflow-wrap: break-word;
     width: var(--phone-w);
     max-width: 100%;
     height: var(--phone-h);
@@ -371,6 +373,7 @@
 }
 .sheet__title {
     margin: 4px 0 0;
+    white-space: pre-line;
     font-family: var(--font-round);
     font-size: 26px;
     font-weight: 400;
@@ -378,6 +381,7 @@
 }
 .sheet__desc {
     margin: 0 0 6px;
+    white-space: pre-line;
     font-size: 19px;
     line-height: 1.5;
     color: var(--sub);
@@ -594,10 +598,6 @@
     height: 27px;
     margin-top: 6px;
 }
-.phone--big .ai-note br {
-    display: none;
-}
-
 /* 바텀시트 · 토스트 */
 .phone--big .sheet {
     gap: 12px;

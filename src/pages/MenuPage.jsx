@@ -7,7 +7,6 @@ import Toast from '../components/common/Toast';
 import MenuCard, { FoodTile } from '../components/order/MenuCard';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
-import useSpeechToText from '../hooks/useSpeechToText';
 import {
     OPTIONS,
     getCartCount,
@@ -19,23 +18,22 @@ import {
 import formatPrice from '../utils/formatPrice';
 import menu from '../mocks/menu.json';
 import script from '../mocks/messages.json';
-import { addCartItem } from '../api/session'; // 👈 1. 백엔드 장바구니 API 임포트
+import { addCartItem } from '../api/session';          // 👈 서버 장바구니 추가 API 연동
+import { createHelpRequest } from '../api/order';     // 👈 서버 직원 호출 API 연동
 import './MenuPage.css';
 
-// 수량 (1개가 기본 ★, 4개 이상은 주문 확인 화면의 [+]로)
+// 수량 (1개가 기본, 4개 이상은 주문 확인 화면의 [+]로)
 const QTY_CHOICES = [1, 2, 3];
 
-// 3. 눌러서 주문하기: 큰 사진 메뉴판 (어르신도 읽기 쉽게 글자를 크게)
+// 3. 눌러서 주문하기: 큰 사진 메뉴판 (백엔드 API 연동 버전)
 export default function MenuPage() {
     const navigate = useNavigate();
     const cart = useSessionStore((s) => s.cart);
     const addItem = useSessionStore((s) => s.addItem);
     const setFrom = useSessionStore((s) => s.setFrom);
-    const callStaff = useSessionStore((s) => s.callStaff);
     const startOver = useSessionStore((s) => s.startOver);
     const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
-    const { listening, listen } = useSpeechToText();
 
     const [tab, setTab] = useState(menu.categories[0].id);
     const [toast, setToast] = useState('');
@@ -47,7 +45,7 @@ export default function MenuPage() {
         setFrom('menu');
     }, [setFrom]);
 
-    // 무응답 3단계 (30초 · 1분 · 1분 30초) — 명세서 STEP 10-3
+    // 무응답 3단계 (30초 · 1분 · 1분 30초)
     const onIdleStep = useCallback(
         (stage) => {
             setIdleStage(stage);
@@ -67,53 +65,49 @@ export default function MenuPage() {
         speak(`${name}${opt ? ` ${opt.replace(/핫/g, '따뜻하게').replace(/ · /g, ', ')}` : ''} ${qty}개 담았어요`);
     };
 
-    // 메뉴를 누르면 옵션 창: 크기 · 온도 · 얼음 · 수량 (빵·디저트는 수량만)
-    // 기본값: 크기 보통, 수량 1개 (온도는 손님이 직접 골라요)
+    // 메뉴를 누르면 옵션 창: 크기 · 온도 · 얼음 · 수량
     const onPick = (item) => {
         const picked = { qty: 1 };
         if (item.options.includes('size')) picked.size = OPTIONS.size.default;
         setOptionPick({ item, picked });
     };
 
-    // 크기·온도·얼음을 한 화면에서 고르고 [담기]
+    // 크기·온도·얼음을 한 화면에서 고르고
     const onOption = (key, value) =>
         setOptionPick((prev) => {
             const picked = { ...prev.picked, [key]: value };
             if (key === 'temperature') {
-                if (value === 'ice') picked.ice = prev.picked.ice ?? OPTIONS.ice.default; // 아이스면 얼음 보통
-                else delete picked.ice; // 핫이면 얼음 없음
+                if (value === 'ice') picked.ice = prev.picked.ice ?? OPTIONS.ice.default;
+                else delete picked.ice;
             }
             return { ...prev, picked };
         });
 
-    // 👈 2. 서버 API 연동이 포함된 장바구니 담기 함수 수정
+    // 🚀 서버 연동: 옵션 선택 후 [담기] 클릭 시 백엔드 장바구니 API 동기화
     const onAddWithOptions = async () => {
         const { item, picked } = optionPick;
         const { qty, ...options } = picked;
 
-        try {
-            // Local 상태 업데이트 (프론트 화면 즉시 반영용)
-            addItem(item.id, options, qty);
+        // 1. 프론트엔드 로컬 상태 반영 (스토어)
+        addItem(item.id, options, qty);
+        added(item.name, getOptionLabel(options), qty);
+        setOptionPick(null);
 
-            // 서버 세션 정보 가져오기
+        // 2. 백엔드 서버 장바구니 API 동기화
+        try {
             const sessionId = localStorage.getItem('sessionId');
             const sessionToken = localStorage.getItem('sessionToken');
 
             if (sessionId && sessionToken) {
-                // 백엔드 장바구니 담기 API 호출
+                // 백엔드 명세에 맞춘 addCartItem 호출 (POST /api/sessions/{sessionId}/cart/items)[cite: 1]
                 await addCartItem(sessionId, sessionToken, item.id, qty, options);
             }
-
-            added(item.name, getOptionLabel(options), qty);
         } catch (error) {
-            console.error("장바구니 담기 서버 전송 실패:", error);
-            // 필요 시 에러 토스트나 안내 처리
-        } finally {
-            setOptionPick(null);
+            console.error("서버 장바구니 담기 실패:", error);
         }
     };
 
-    // 지금 보여줄 옵션 묶음 (얼음은 아이스를 골랐을 때만)
+    // 지금 보여줄 옵션 묶음
     const optionKeys = optionPick
         ? optionPick.item.options.filter(
               (key) => key !== 'ice' || optionPick.picked.temperature === 'ice',
@@ -121,14 +115,24 @@ export default function MenuPage() {
         : [];
     const optionsDone = optionPick ? !nextOption(optionPick.item, optionPick.picked) : false;
 
-    // 직원 호출: 누르면 바로 매장 화면에 알림이 가요
+    // 🚀 서버 연동: 직원 호출 API
     const notify = (msg) => {
         setSheet(null);
         setToast(msg);
         speak(msg);
     };
-    const callNow = (reason) => {
-        callStaff(reason);
+
+    const callNow = async (reason) => {
+        try {
+            const sessionId = localStorage.getItem('sessionId');
+            const sessionToken = localStorage.getItem('sessionToken');
+
+            if (sessionId && sessionToken) {
+                await createHelpRequest(sessionId, sessionToken); //[cite: 1]
+            }
+        } catch (error) {
+            console.error("직원 호출 서버 전송 실패:", error);
+        }
         notify(useSessionStore.getState().cart.length ? script.calledWithCart : script.called);
     };
 
@@ -311,10 +315,6 @@ export default function MenuPage() {
                     <BigButton variant="outline" onClick={leave}>
                         그만할게요
                     </BigButton>
-                    <button type="button" className="sheet-mic" onClick={() => listen(leave)}>
-                        <MicIcon size={20} />
-                        {listening ? '듣고 있어요…' : `말로 답해도 돼요 · "${script.leaveVoice}"`}
-                    </button>
                 </BottomSheet>
             </div>
 

@@ -2,45 +2,94 @@ import { useCallback, useEffect, useState } from 'react';
 import { Tello } from '../components/common/Header';
 import Toast from '../components/common/Toast';
 import {
-    MODE_LABELS,
-    STATUS_LABELS,
-    useSessionStore,
-} from '../stores/sessionStore';
+    getAdminOrders,
+    changeOrderStatus,
+    getAdminHelpRequests,
+    completeHelpRequest,
+} from '../api/admin';
 import storeInfo from '../mocks/store.json';
 import './BossPage.css';
 
-// 상태별 안내·버튼 (stripe: 카드 왼쪽 색 막대)
+// 상태별 안내·버튼 맵핑 (백엔드 status: pending, preparing, completed 대응)
 const STATE = {
-    new: { hint: '눌러서 만들기 시작', btn: '준비 시작', primary: true },
-    prep: { hint: '다 되면 손님 폰에 알려요', btn: '준비 완료', primary: true },
-    ready: { hint: '손님 폰에 알림 보냄', btn: '받아 갔어요', primary: false },
+    pending: { label: '새 주문', hint: '눌러서 만들기 시작', btn: '준비 시작', primary: true, nextStatus: 'preparing' },
+    preparing: { label: '만드는 중', hint: '다 되면 손님 폰에 알려요', btn: '준비 완료', primary: true, nextStatus: 'completed' },
+    completed: { label: '완료됨', hint: '손님 폰에 알림 보냄', btn: '받아 갔어요', primary: false, nextStatus: null },
 };
 
 const ago = (createdAt, now) => {
-    const minutes = Math.floor((now - createdAt) / 60000);
+    const diffMs = now - (typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime());
+    const minutes = Math.floor(diffMs / 60000);
     return minutes < 1 ? '방금' : `${minutes}분 전`;
 };
 
 // 6. 매장 화면 (태블릿): 주문과 직원 호출을 실시간으로 받아요.
 export default function BossPage() {
-    const orders = useSessionStore((s) => s.orders);
-    const calls = useSessionStore((s) => s.calls);
-    const advanceOrder = useSessionStore((s) => s.advanceOrder);
-    const ackCall = useSessionStore((s) => s.ackCall);
-    const resetDemo = useSessionStore((s) => s.resetDemo);
-
+    const [orders, setOrders] = useState([]);
+    const [calls, setCalls] = useState([]);
     const [now, setNow] = useState(() => Date.now());
     const [toast, setToast] = useState('');
     const clearToast = useCallback(() => setToast(''), []);
 
-    // "N분 전" 갱신
-    useEffect(() => {
-        const timer = setInterval(() => setNow(Date.now()), 30000);
-        return () => clearInterval(timer);
-    }, []);
+    const adminToken = localStorage.getItem('adminToken') || 'mock-admin-token';
 
-    const nNew = orders.filter((o) => o.status === 'new').length;
-    const nPrep = orders.filter((o) => o.status === 'prep').length;
+    // 1. 주문 목록 및 직원 호출 데이터 불러오기 (Polling 3초 주기)
+    const fetchData = useCallback(async () => {
+        try {
+            if (!adminToken) return;
+
+            const orderRes = await getAdminOrders(adminToken);
+            if (orderRes && orderRes.orders) {
+                setOrders(orderRes.orders);
+            }
+
+            const callRes = await getAdminHelpRequests(adminToken);
+            if (callRes && Array.isArray(callRes)) {
+                setCalls(callRes);
+            }
+        } catch (error) {
+            console.error("매장 현황 데이터 동기화 실패:", error);
+        }
+    }, [adminToken]);
+
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(() => {
+            setNow(Date.now());
+            fetchData();
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [fetchData]);
+
+    // 2. 주문 상태 변경 핸들러
+    const handleAdvanceOrder = async (orderId, currentStatus) => {
+        const nextStatus = STATE[currentStatus]?.nextStatus;
+        if (!nextStatus) return;
+
+        try {
+            await changeOrderStatus(adminToken, orderId, nextStatus);
+            setToast(nextStatus === 'preparing' ? '조리를 시작합니다.' : '준비 완료 알림을 보냈습니다.');
+            fetchData();
+        } catch (error) {
+            console.error("주문 상태 변경 실패:", error);
+            setToast("상태 변경에 실패했습니다.");
+        }
+    };
+
+    // 3. 직원 호출 완료 처리 핸들러
+    const handleAckCall = async (requestId) => {
+        try {
+            await completeHelpRequest(adminToken, requestId);
+            setToast('직원이 가고 있어요');
+            fetchData();
+        } catch (error) {
+            console.error("직원 호출 처리 실패:", error);
+        }
+    };
+
+    const nNew = orders.filter((o) => o.status === 'pending').length;
+    const nPrep = orders.filter((o) => o.status === 'preparing').length;
 
     return (
         <div className="boss-stage">
@@ -48,8 +97,8 @@ export default function BossPage() {
                 <a className="demo-btn" href="/" target="_blank" rel="noreferrer">
                     손님 화면 열기
                 </a>
-                <button type="button" className="demo-btn" onClick={resetDemo}>
-                    시연 처음부터
+                <button type="button" className="demo-btn" onClick={fetchData}>
+                    새로고침
                 </button>
             </div>
 
@@ -58,7 +107,7 @@ export default function BossPage() {
                     <span className="boss-header__title">
                         <span className="brand-dot" />
                         {storeInfo.name} 주문 현황
-                        <span className="boss-header__badge">MVP 가상 화면 · POS 미연동</span>
+                        <span className="boss-header__badge">백엔드 API 연동 실시간 POS</span>
                     </span>
                     <span className="boss-header__counts">
                         <span className="boss-count boss-count--new">
@@ -72,7 +121,7 @@ export default function BossPage() {
                 </header>
 
                 {calls.map((call) => (
-                    <div key={call.id} className="boss-call glass" role="alert">
+                    <div key={call.requestId || call.id} className="boss-call glass" role="alert">
                         <span className="boss-call__main">
                             <Tello face="sad" size={46} />
                             <span className="boss-call__text">
@@ -81,18 +130,15 @@ export default function BossPage() {
                                     직원 호출 · {ago(call.createdAt, now) === '방금' ? '지금' : ago(call.createdAt, now)}
                                 </span>
                                 <span className="boss-call__title">
-                                    {call.orderNo ? `${call.orderNo}번 손님이` : '주문 중인 손님이'} 도움을 요청했어요
+                                    {call.orderNumber ? `${call.orderNumber}번 손님이` : '주문 중인 손님이'} 도움을 요청했어요
                                 </span>
                             </span>
-                            <span className="boss-call__reason">이유: {call.reason}</span>
+                            <span className="boss-call__reason">세션 ID: {call.sessionId?.slice(0, 8)}...</span>
                         </span>
                         <button
                             type="button"
                             className="pill-btn"
-                            onClick={() => {
-                                ackCall(call.id);
-                                setToast('직원이 가고 있어요');
-                            }}
+                            onClick={() => handleAckCall(call.requestId || call.id)}
                         >
                             확인했어요
                         </button>
@@ -106,46 +152,45 @@ export default function BossPage() {
                         </p>
                     )}
                     {orders.map((order) => {
-                        const voice = order.mode === 'voice';
-                        const st = STATE[order.status];
+                        const st = STATE[order.status] || STATE.pending;
                         return (
-                            <article key={order.no} className={`boss-card glass is-${order.status}`}>
+                            <article key={order.orderId} className={`boss-card glass is-${order.status}`}>
                                 <span className="boss-card__stripe" />
                                 <div className="boss-card__body">
                                     <div className="boss-card__top">
-                                        <span className={`boss-card__tag ${voice ? 'is-voice' : ''}`}>
-                                            {MODE_LABELS[order.mode]}
+                                        <span className="boss-card__tag">
+                                            매장 주문
                                         </span>
                                         <span className="boss-card__time">
-                                            {order.sample && '예시 · '}
                                             {ago(order.createdAt, now)}
                                         </span>
                                     </div>
                                     <span className="boss-card__no">
-                                        {order.no}
+                                        {order.orderNumber}
                                         <small>번</small>
                                     </span>
                                     <div className="boss-card__items">
-                                        {order.items.map((it, i) => (
+                                        {order.items && order.items.map((it, i) => (
                                             <div key={i}>
-                                                {it.name} ×{it.qty}
-                                                {it.opt ? ` · ${it.opt}` : ''}
+                                                {it.name} ×{it.quantity}
+                                                {it.selectedOptions ? ` · ${Object.values(it.selectedOptions).filter(Boolean).join(', ')}` : ''}
                                             </div>
                                         ))}
                                     </div>
-                                    {voice && <span className="boss-card__hint">번호를 크게 불러 주세요</span>}
                                     <div className="boss-card__foot">
                                         <span className="boss-card__state">
-                                            <b>{STATUS_LABELS[order.status]}</b>
+                                            <b>{st.label}</b>
                                             <span>{st.hint}</span>
                                         </span>
-                                        <button
-                                            type="button"
-                                            className={`boss-card__btn ${st.primary ? '' : 'is-outline'}`}
-                                            onClick={() => advanceOrder(order.no)}
-                                        >
-                                            {st.btn}
-                                        </button>
+                                        {st.nextStatus && (
+                                            <button
+                                                type="button"
+                                                className={`boss-card__btn ${st.primary ? '' : 'is-outline'}`}
+                                                onClick={() => handleAdvanceOrder(order.orderId, order.status)}
+                                            >
+                                                {st.btn}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </article>

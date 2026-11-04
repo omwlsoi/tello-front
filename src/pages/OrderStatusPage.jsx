@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { BrandHeader, CardIcon, CheckIcon, Tello } from '../components/common/Header';
 import script from '../mocks/messages.json';
 import BigButton from '../components/common/BigButton';
 import useTextToSpeech from '../hooks/useTextToSpeech';
-import { getOrderDetails } from '../api/order'; // 👈 주문 상태/결과 조회 API 임포트
+import { useSessionStore } from '../stores/sessionStore';
+import { getOrderDetails } from '../api/order'; // 👈 백엔드 주문 상태 조회 API 연동
 import './OrderStatusPage.css';
 
-// 단계마다 텔로 표정·자세와 문구가 달라요
+// 단계별 텔로 표정·자세와 문구 맵핑 (백엔드 status: pending, preparing, completed 대응)
 const STAGES = {
     pending: { step: 0, face: 'smile', pose: 'none', eyebrow: '1단계 / 3단계', title: '주문이 들어갔어요', sub: '가게에 잘 전달됐어요' },
     preparing: { step: 1, face: 'focus', pose: 'brew', eyebrow: '2단계 / 3단계', title: '지금 만들고 있어요', sub: '조금만 기다려 주세요' },
@@ -17,53 +18,55 @@ const STAGES = {
 
 const STEP_LABELS = ['주문 완료', '만드는 중', '다 됐어요'];
 
+// 5. 주문 상태 페이지 (백엔드 API 연동 버전)
 export default function OrderStatusPage() {
     const navigate = useNavigate();
-    const { orderId } = useParams(); // URL 파라미터로 전달된 orderId 활용 (예: /status/:orderId)
+    const { orderId } = useParams(); // URL에 포함된 orderId 경로 파라미터
+    const location = useLocation();
+    const startOver = useSessionStore((s) => s.startOver);
+    const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
 
-    const [orderData, setOrderData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const lastSpokenStatus = useRef(null);
+    // 초기 주문 데이터 (ConfirmPage에서 넘어올 때 state로 전달받은 데이터 활용 가능)
+    const [orderData, setOrderData] = useState(location.state?.orderData || null);
+    const [status, setStatus] = useState(orderData?.status || 'pending');
+    
+    const stage = STAGES[status] ?? STAGES.pending;
+    const lastSpoken = useRef(null);
 
-    // 서버에서 주문 상태 주기적 조회 (Polling 방식)
+    // 🚀 서버 연동: 3초 주기로 본인 주문 상태 조회 API(Polling) 호출
     const fetchOrderStatus = useCallback(async () => {
+        if (!orderId) return;
         try {
-            const sessionId = localStorage.getItem('sessionId');
             const sessionToken = localStorage.getItem('sessionToken');
+            if (!sessionToken) return;
 
-            if (!sessionId || !sessionToken || !orderId) {
-                setIsLoading(false);
-                return;
+            // 백엔드 주문 상태 조회 API 호출 (GET /api/orders/{orderId})
+            const res = await getOrderDetails(orderId, sessionToken);
+            if (res && res.status) {
+                setOrderData(res);
+                setStatus(res.status);
             }
-
-            // GET /api/orders/{orderId} 호출
-            const data = await getOrderDetails(sessionId, sessionToken, orderId);
-            setOrderData(data);
         } catch (error) {
-            console.error("주문 상태 조회 실패:", error);
-        } finally {
-            setIsLoading(false);
+            console.error("주문 상태 동기화 실패:", error);
         }
     }, [orderId]);
 
-    // 컴포넌트 마운트 시 조회 및 폴링(3초마다 상태 동기화) 설정
     useEffect(() => {
-        fetchOrderStatus();
-        const interval = setInterval(fetchOrderStatus, 3000); // 실시간 반영을 위한 폴링
+        if (!orderId) return;
+
+        fetchOrderStatus(); // 첫 진입 시 즉시 조회
+        const interval = setInterval(fetchOrderStatus, 3000); // 3초마다 폴링
+
         return () => clearInterval(interval);
-    }, [fetchOrderStatus]);
+    }, [orderId, fetchOrderStatus]);
 
-    const status = orderData ? orderData.status : 'pending';
-    const stage = STAGES[status] ?? STAGES.pending;
-    const orderNumber = orderData ? orderData.orderNumber : '---';
-
-    // 상태가 바뀔 때마다 소리로 알려주기
+    // 상태가 바뀔 때마다 소리로 알려줘요
     useEffect(() => {
-        if (!orderData || lastSpokenStatus.current === status) return;
+        if (!orderData || lastSpoken.current === status) return;
 
-        if (lastSpokenStatus.current === null) {
-            speak(`주문이 들어갔어요. 주문 번호는 ${orderNumber}번이에요.`);
+        if (lastSpoken.current === null) {
+            speak(`주문이 들어갔어요. 주문 번호는 ${orderData.orderNumber}번이에요.`);
         } else if (status === 'preparing') {
             speak('지금 메뉴를 만들고 있어요.');
         } else if (status === 'completed') {
@@ -73,35 +76,34 @@ export default function OrderStatusPage() {
             } catch {
                 // 진동 미지원 기기 무시
             }
+        } else if (status === 'picked') {
+            speak(script.goodbye);
         }
-        lastSpokenStatus.current = status;
-    }, [status, orderData, orderNumber, speak]);
+        lastSpoken.current = status;
+    }, [status, orderData, speak]);
 
     const goHome = () => {
+        startOver();
         localStorage.removeItem('sessionId');
         localStorage.removeItem('sessionToken');
         navigate('/');
     };
 
-    if (isLoading) {
-        return <div className="stage"><div className="phone"><p>주문 정보를 불러오는 중…</p></div></div>;
-    }
-
     return (
         <div className="stage">
-            <div className="phone">
+            <div className={`phone ${bigText ? 'phone--big' : ''}`}>
                 <div className="phone__scroll">
                 <BrandHeader />
 
                 {!orderData ? (
                     <main className="phone__body">
-                        <h1 className="screen-title">아직 주문이 없어요</h1>
-                        <p className="screen-desc">처음 화면에서 주문을 시작해 주세요.</p>
+                        <h1 className="screen-title">주문 정보를 불러오는 중...</h1>
+                        <p className="screen-desc">잠시만 기다려 주세요.</p>
                     </main>
                 ) : (
                     <main className="phone__body status-body">
                         <div className="status-hero glass" role="status">
-                            <Tello face={stage.face} pose={stage.pose} size={100} />
+                            <Tello face={stage.face} pose={stage.pose} size={bigText ? 116 : 100} />
                             <span className="eyebrow status-hero__eyebrow">{stage.eyebrow}</span>
                             <h1 className="status-hero__title">{stage.title}</h1>
                             <p className="status-hero__sub">{stage.sub}</p>
@@ -109,7 +111,8 @@ export default function OrderStatusPage() {
 
                         <ol className="status-steps" aria-label="주문 진행 상황">
                             {STEP_LABELS.map((label, i) => {
-                                const state = i < stage.step ? 'past' : i === stage.step ? 'current' : 'future';
+                                const state =
+                                    i < stage.step ? 'past' : i === stage.step ? 'current' : 'future';
                                 return (
                                     <li
                                         key={label}
@@ -132,7 +135,7 @@ export default function OrderStatusPage() {
                         <div className="status-ticket glass">
                             <div className="status-number">
                                 <span className="status-number__label">주문 번호</span>
-                                <span className="status-number__big">{orderNumber}</span>
+                                <span className="status-number__big">{orderData.orderNumber}</span>
                             </div>
                             <div className="status-pay">
                                 <span className="status-pay__icon">
@@ -157,6 +160,17 @@ export default function OrderStatusPage() {
                 </div>
                 </div>
             </div>
+
+            <aside className="demo-panel" aria-label="시연 버튼">
+                <p className="demo-panel__label">시연 버튼</p>
+                <div className="demo-panel__box">
+                    <h3>매장 화면</h3>
+                    <p>새 탭에서 매장 화면을 열어 상태를 바꿔보세요.</p>
+                    <a className="demo-btn" href="/boss" target="_blank" rel="noreferrer">
+                        매장 화면 열기
+                    </a>
+                </div>
+            </aside>
         </div>
     );
 }
