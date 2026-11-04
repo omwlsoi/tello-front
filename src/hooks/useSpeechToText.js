@@ -1,29 +1,63 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// MVP 시연용 음성 인식(STT)이에요.
-// 마이크를 누르면 잠깐 "듣고 있어요" 상태가 된 뒤 onResult 를 불러요.
-// 실제 연동 시 이 훅 안에서 Web Speech API 나 백엔드 STT 결과를 넘기면 돼요.
-export default function useSpeechToText({ delay = 1100 } = {}) {
+const SpeechRecognition =
+    typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+export default function useSpeechToText({ lang = 'ko-KR' } = {}) {
     const [listening, setListening] = useState(false);
-    const timerRef = useRef(null);
+    const recRef = useRef(null);
 
     const listen = useCallback(
         (onResult) => {
-            if (timerRef.current) return;
-            setListening(true);
-            timerRef.current = setTimeout(() => {
-                timerRef.current = null;
+            if (recRef.current) return;
+
+            if (!SpeechRecognition) {
+                console.warn('[STT] 이 브라우저는 Web Speech API를 지원하지 않아요 (Chrome/Edge 사용)');
+                onResult?.('');
+                return;
+            }
+
+            const rec = new SpeechRecognition();
+            rec.lang = lang;
+            rec.interimResults = false;
+            rec.continuous = false;
+            rec.maxAlternatives = 1;
+
+            let transcript = '';
+            let finished = false;
+            const finish = () => {
+                if (finished) return;
+                finished = true;
+                recRef.current = null;
                 setListening(false);
-                onResult?.();
-            }, delay);
+                onResult?.(transcript.trim());
+            };
+
+            rec.onresult = (e) => {
+                transcript = Array.from(e.results).map((r) => r[0].transcript).join(' ');
+            };
+            rec.onerror = (e) => console.warn('[STT error]', e.error); // not-allowed, no-speech 등
+            rec.onend = finish; // 성공/실패 모두 여기서 한 번만 마무리
+
+            recRef.current = rec;
+            setListening(true);
+            try {
+                rec.start();
+            } catch (err) {
+                console.error('[STT start 실패]', err);
+                finish();
+            }
         },
-        [delay],
+        [lang],
     );
 
     useEffect(
         () => () => {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
+            if (recRef.current) {
+                recRef.current.onend = null;
+                recRef.current.abort();
+                recRef.current = null;
+            }
         },
         [],
     );

@@ -242,8 +242,7 @@ export default function VoicePage() {
         const last = messages[messages.length - 1];
         setFailCount(0);
 
-        if (last?.who === 'ai' && ASKS.includes(last.ask) && answerByVoice(last)) return;
-
+        if (!transcript && last?.who === 'ai' && ASKS.includes(last.ask) && answerByVoice(last)) return;
         const spokenText = transcript;
         if (!spokenText) {
             ai("말씀하신 내용을 잘 듣지 못했어요. 다시 말씀해 주세요.");
