@@ -18,6 +18,7 @@ import {
 import formatPrice from '../utils/formatPrice';
 import menu from '../mocks/menu.json';
 import script from '../mocks/messages.json';
+import getErrorMessage from '../utils/getErrorMessage';
 import { addCartItem } from '../api/session';          // 👈 서버 장바구니 추가 API 연동
 import { createHelpRequest } from '../api/order';     // 👈 서버 직원 호출 API 연동
 import './MenuPage.css';
@@ -30,6 +31,7 @@ export default function MenuPage() {
     const navigate = useNavigate();
     const cart = useSessionStore((s) => s.cart);
     const addItem = useSessionStore((s) => s.addItem);
+    const setCartFromServer = useSessionStore((s) => s.setCartFromServer);
     const setFrom = useSessionStore((s) => s.setFrom);
     const startOver = useSessionStore((s) => s.startOver);
     const bigText = useSessionStore((s) => s.bigText);
@@ -100,10 +102,13 @@ export default function MenuPage() {
 
             if (sessionId && sessionToken) {
                 // 백엔드 명세에 맞춘 addCartItem 호출 (POST /api/sessions/{sessionId}/cart/items)[cite: 1]
-                await addCartItem(sessionId, sessionToken, item.id, qty, options);
+                const res = await addCartItem(sessionId, sessionToken, item.id, qty, options);
+                // 서버 장바구니(itemId 포함)로 화면을 맞춰요
+                if (res?.items) setCartFromServer(res.items);
             }
         } catch (error) {
             console.error("서버 장바구니 담기 실패:", error);
+            setToast(getErrorMessage(error, '메뉴를 담지 못했어요. 다시 골라 주세요.'));
         }
     };
 
@@ -122,7 +127,7 @@ export default function MenuPage() {
         speak(msg);
     };
 
-    const callNow = async (reason) => {
+    const callNow = async () => {
         try {
             const sessionId = localStorage.getItem('sessionId');
             const sessionToken = localStorage.getItem('sessionToken');
@@ -299,7 +304,7 @@ export default function MenuPage() {
                 >
                     <BigButton onClick={() => setSheet(null)}>계속할게요</BigButton>
                     {idleStage === 1 && (
-                        <BigButton variant="dark" onClick={() => callNow('오래 머무름')}>
+                        <BigButton variant="dark" onClick={() => callNow()}>
                             직원 호출
                         </BigButton>
                     )}

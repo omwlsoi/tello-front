@@ -22,6 +22,7 @@ import {
 import script from '../mocks/messages.json';
 import { addCartItem, analyzeMessage } from '../api/session';
 import { createHelpRequest } from '../api/order';
+import applyVoiceResponse, { YES_NO_CHOICES } from '../utils/applyVoiceResponse';
 import './VoicePage.css';
 
 const MORE_CHOICES = [
@@ -70,6 +71,7 @@ export default function VoicePage() {
     const callStaff = useSessionStore((s) => s.callStaff);
     const startOver = useSessionStore((s) => s.startOver);
     const bigText = useSessionStore((s) => s.bigText);
+    const setCartFromServer = useSessionStore((s) => s.setCartFromServer);
 
     const { speak } = useTextToSpeech();
     const { listening, listen } = useSpeechToText();
@@ -129,12 +131,12 @@ export default function VoicePage() {
                 key === 'qty'
                     ? QTY_CHOICES
                     : OPTIONS[key].choices.map((c) => ({
-                          action: 'option',
-                          value: c.id,
-                          said: c.label,
-                          label: c.label,
-                          sub: key === 'size' ? (c.extra ? `+${formatPrice(c.extra)}` : '기본 가격') : '',
-                          kind: c.id === OPTIONS[key].default ? 'lime' : 'gbtn',
+                        action: 'option',
+                        value: c.id,
+                        said: c.label,
+                        label: c.label,
+                        sub: key === 'size' ? (c.extra ? `+${formatPrice(c.extra)}` : '기본 가격') : '',
+                        kind: c.id === OPTIONS[key].default ? 'lime' : 'gbtn',
                       }));
             ai(lead ? `${lead} ${script.ask[key]}` : script.ask[key], {
                 ask: 'option',
@@ -196,7 +198,7 @@ export default function VoicePage() {
         },
         [ai],
     );
-    const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length);
+    const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length, !listening && !thinking && failCount < 3);
 
     const callNow = async (reason) => {
         try {
@@ -255,17 +257,18 @@ export default function VoicePage() {
 
             if (sessionId && sessionToken) {
                 setThinking(true);
-                // OpenAPI /api/sessions/{sessionId}/messages 연동
                 const response = await analyzeMessage(sessionId, sessionToken, spokenText);
                 setThinking(false);
 
-                if (response && response.item) {
-                    askOption(response.item, response.picked ?? {}, response.aiMessage);
-                } else if (response && response.recommend) {
-                    recommend(response.recommend);
-                } else {
-                    ai(response?.aiMessage || "말씀하신 내용을 잘 이해하지 못했어요. 다시 한 번 말씀해 주세요.");
-                }
+                // 파트너가 제공한 공통 응답 처리 유틸 적용
+                applyVoiceResponse(response, {
+                    say: ai,
+                    setCartFromServer,
+                    goMenu: () => navigate('/menu'),
+                    goConfirm: () => navigate('/confirm'),
+                    moreChoices: MORE_CHOICES,
+                    yesNoChoices: YES_NO_CHOICES,
+                });
             } else {
                 setThinking(false);
                 ai("세션 정보를 찾을 수 없습니다. 다시 시도해 주세요.");
@@ -273,20 +276,7 @@ export default function VoicePage() {
         } catch (error) {
             setThinking(false);
             console.error("음성 메시지 서버 전송 실패:", error);
-            
-            const lastStep = script.steps.length - 1;
-            const { voiceStep } = useSessionStore.getState();
-            const step = script.steps[Math.min(voiceStep, lastStep)];
-            
-            if (step.recommend != null) {
-                recommend(step.recommend);
-            } else if (step.itemId) {
-                const picked = { ...(step.preset ?? {}), ...(step.qty ? { qty: step.qty } : {}) };
-                askOption(findItem(step.itemId), picked, step.ai);
-            } else {
-                ai(step.ai);
-            }
-            setVoiceStep(Math.min(voiceStep + 1, lastStep));
+            ai("서버와 통신하는 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
         }
     };
 
@@ -318,6 +308,12 @@ export default function VoicePage() {
     };
 
     const onChoice = (message, choice, said) => {
+        if (choice.action === 'reply') {
+            me(choice.said);
+            handleSpeech(choice.said);
+            return;
+        }
+
         if (choice.action === 'option') {
             me(said ?? choice.said);
             askOption(findItem(message.itemId), {

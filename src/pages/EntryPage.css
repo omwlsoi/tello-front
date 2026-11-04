@@ -301,3 +301,11 @@
     margin-left: 12px;
     vertical-align: -2px;
 }
+
+/* 세션 만드는 중: 누른 카드는 그대로, 다른 카드는 흐리게 */
+.entry-card:disabled {
+    cursor: progress;
+}
+.entry-card:disabled:not([aria-busy='true']) {
+    opacity: 0.55;
+}

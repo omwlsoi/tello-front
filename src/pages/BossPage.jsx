@@ -118,13 +118,16 @@ export default function BossPage() {
     }, [adminToken]);
 
     useEffect(() => {
-        fetchData();
+        const first = setTimeout(fetchData, 0); // 들어오자마자 한 번 조회
         const interval = setInterval(() => {
             setNow(Date.now());
             fetchData();
         }, 3000);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearTimeout(first);
+            clearInterval(interval);
+        };
     }, [fetchData]);
 
     // 2. 주문 상태 변경 핸들러

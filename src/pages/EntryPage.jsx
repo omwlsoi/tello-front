@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowIcon, BrandHeader, HandIcon, MicIcon, Tello, WaveIcon } from '../components/common/Header';
 import { useSessionStore } from '../stores/sessionStore';
@@ -14,7 +15,13 @@ export default function EntryPage() {
     const bigText = useSessionStore((s) => s.bigText);
 
     // 🚀 서버 연동: 주문 방식 선택 시 백엔드 세션 생성 API 호출
+    const [starting, setStarting] = useState(null); // 'voice' | 'menu' | null (세션 만드는 중)
+    const startingRef = useRef(false);
+
     const start = async (mode) => {
+        if (startingRef.current) return; // 여러 번 눌러도 세션은 하나만
+        startingRef.current = true;
+        setStarting(mode);
         try {
             // 기본 매장 ID (필요에 따라 변경 가능)
             const storeId = "store_001"; 
@@ -73,7 +80,7 @@ export default function EntryPage() {
 
                     {bigText ? (
                         <main className="entry-options">
-                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
+                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')} disabled={!!starting} aria-busy={starting === 'voice'}>
                                 <span className="entry-card__tag">추천</span>
                                 <span className="entry-card__row">
                                     <span className="entry-card__name">
@@ -91,11 +98,11 @@ export default function EntryPage() {
                                 </span>
                                 <span className="entry-pill entry-pill--white">
                                     <MicIcon size={28} />
-                                    텔로링에게 말하기
+                                    {starting === 'voice' ? '준비 중…' : '텔로링에게 말하기'}
                                 </span>
                             </button>
 
-                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
+                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')} disabled={!!starting} aria-busy={starting === 'menu'}>
                                 <span className="entry-card__name entry-card__name--menu">
                                     <span className="entry-card__mark entry-card__mark--blue">눌러서</span> 주문하기
                                 </span>
@@ -106,13 +113,13 @@ export default function EntryPage() {
                                 </span>
                                 <span className="entry-pill entry-pill--blue">
                                     <HandIcon size={28} />
-                                    메뉴판 보기
+                                    {starting === 'menu' ? '준비 중…' : '메뉴판 보기'}
                                 </span>
                             </button>
                         </main>
                     ) : (
                         <main className="entry-options">
-                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')}>
+                            <button type="button" className="entry-card entry-card--voice glass" onClick={() => start('voice')} disabled={!!starting} aria-busy={starting === 'voice'}>
                                 <span className="entry-card__tag">추천</span>
                                 <span className="entry-card__row">
                                     <span className="entry-card__name">
@@ -127,7 +134,7 @@ export default function EntryPage() {
                                 </span>
                                 <span className="entry-card__foot">
                                     <span className="entry-pill entry-pill--white">
-                                        텔로링에게 말하기
+                                        {starting === 'voice' ? '준비 중…' : '텔로링에게 말하기'}
                                         <ArrowIcon />
                                     </span>
                                     <span className="entry-round entry-round--white">
@@ -136,7 +143,7 @@ export default function EntryPage() {
                                 </span>
                             </button>
 
-                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')}>
+                            <button type="button" className="entry-card entry-card--menu glass" onClick={() => start('menu')} disabled={!!starting} aria-busy={starting === 'menu'}>
                                 <span className="entry-card__name entry-card__name--menu">
                                     <span className="entry-card__mark entry-card__mark--blue">눌러서</span> 주문하기
                                 </span>
@@ -145,7 +152,7 @@ export default function EntryPage() {
                                 </span>
                                 <span className="entry-card__foot">
                                     <span className="entry-pill entry-pill--blue">
-                                        메뉴판 보기
+                                        {starting === 'menu' ? '준비 중…' : '메뉴판 보기'}
                                         <ArrowIcon />
                                     </span>
                                     <span className="entry-round entry-round--blue">

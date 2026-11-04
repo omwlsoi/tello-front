@@ -9,8 +9,10 @@ import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
 import { getCartCount, getCartTotal, getChoiceLabel, useSessionStore } from '../stores/sessionStore';
 import formatPrice from '../utils/formatPrice';
+import getErrorMessage from '../utils/getErrorMessage';
 import script from '../mocks/messages.json';
 import { confirmOrder, createHelpRequest } from '../api/order'; // 👈 백엔드 주문 확정 및 직원 호출 API 연동
+import { deleteCartItem, getSessionCart, updateCartItem } from '../api/session';
 import './ConfirmPage.css';
 
 // 소리로 읽을 때: "핫" → "따뜻하게", 가운뎃점 → 쉼표
@@ -34,12 +36,24 @@ const readCart = (cart) =>
         `모두 ${getCartCount(cart)}개, ${formatPrice(getCartTotal(cart))}이에요. 맞으면 '맞아요, 주문할게요'를 눌러 주세요.`,
     ].join(' ');
 
+const readSession = () => {
+    try {
+        return {
+            sessionId: localStorage.getItem('sessionId'),
+            sessionToken: localStorage.getItem('sessionToken'),
+        };
+    } catch {
+        return { sessionId: null, sessionToken: null };
+    }
+};
+
 // 4. 주문 확인 페이지 (백엔드 API 연동 버전)
 export default function ConfirmPage() {
     const navigate = useNavigate();
     const cart = useSessionStore((s) => s.cart);
     const from = useSessionStore((s) => s.from);
     const changeQty = useSessionStore((s) => s.changeQty);
+    const setCartFromServer = useSessionStore((s) => s.setCartFromServer);
     const bigText = useSessionStore((s) => s.bigText);
     const { speak } = useTextToSpeech();
 
@@ -49,6 +63,57 @@ export default function ConfirmPage() {
     const [toast, setToast] = useState('');
     const clearToast = useCallback(() => setToast(''), []);
     const spokeRef = useRef(false);
+    const [syncing, setSyncing] = useState(false); // 수량 바꾸는 중 (버튼 잠깐 잠금)
+    const [submitting, setSubmitting] = useState(false); // 주문 넣는 중 (두 번 요청 방지)
+    const submittingRef = useRef(false);
+    const idempotencyKeyRef = useRef(null); // 같은 주문은 다시 눌러도 같은 키로 보내요
+
+    // 들어오면 서버 장바구니를 받아서 화면을 맞춰요 (말로 담은 메뉴도 itemId가 생겨요)
+    useEffect(() => {
+        const { sessionId, sessionToken } = readSession();
+        if (!sessionId || !sessionToken) return;
+        getSessionCart(sessionId, sessionToken)
+            .then((res) => {
+                if (res?.items) setCartFromServer(res.items);
+            })
+            .catch((error) => console.error('서버 장바구니 불러오기 실패:', error));
+    }, [setCartFromServer]);
+
+    // [−][+]: 화면을 먼저 바꾸고 서버 장바구니에도 반영해요
+    const changeLine = async (line, delta) => {
+        changeQty(line.key, delta);
+        idempotencyKeyRef.current = null; // 주문 내용이 바뀌었으니 새 주문 키
+        const { sessionId, sessionToken } = readSession();
+        const parts = line.parts ?? [];
+        if (!sessionId || !sessionToken || !parts.length) return;
+
+        setSyncing(true);
+        try {
+            let res;
+            if (delta > 0) {
+                const part = parts[0];
+                res = await updateCartItem(sessionId, sessionToken, part.itemId, part.qty + 1);
+            } else {
+                const part = parts[parts.length - 1];
+                res =
+                    part.qty > 1
+                        ? await updateCartItem(sessionId, sessionToken, part.itemId, part.qty - 1)
+                        : await deleteCartItem(sessionId, sessionToken, part.itemId);
+            }
+            if (res?.items) setCartFromServer(res.items);
+        } catch (error) {
+            console.error('장바구니 수량 변경 실패:', error);
+            setToast(getErrorMessage(error, '수량을 바꾸지 못했어요. 다시 눌러 주세요.'));
+            try {
+                const res = await getSessionCart(sessionId, sessionToken);
+                if (res?.items) setCartFromServer(res.items);
+            } catch {
+                // 서버에 닿지 않으면 화면 값을 그대로 둬요
+            }
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const backTo = from === 'menu' ? '/menu' : '/voice';
     const total = getCartTotal(cart);
@@ -74,6 +139,9 @@ export default function ConfirmPage() {
 
     // 🚀 서버 연동: 최종 주문 확정 API 호출
     const submit = async () => {
+        if (submittingRef.current) return; // 이미 주문을 넣는 중이면 무시
+        submittingRef.current = true;
+        setSubmitting(true);
         try {
             const sessionId = localStorage.getItem('sessionId');
             const sessionToken = localStorage.getItem('sessionToken');
@@ -85,7 +153,10 @@ export default function ConfirmPage() {
             }
 
             // 중복 방지를 위한 Idempotency-Key 생성 (UUID 또는 고유 타임스탬프 기반)
-            const idempotencyKey = `key_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            if (!idempotencyKeyRef.current) {
+                idempotencyKeyRef.current = `key_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+            }
+            const idempotencyKey = idempotencyKeyRef.current;
 
             // 백엔드 주문 확정 API 호출 (POST /api/orders)[cite: 1]
             const res = await confirmOrder(sessionId, sessionToken, idempotencyKey);
@@ -96,15 +167,18 @@ export default function ConfirmPage() {
             }
         } catch (error) {
             console.error("주문 확정 실패:", error);
-            setToast("주문 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
-            speak("주문 처리 중 오류가 발생했습니다.");
+            const msg = getErrorMessage(error, '주문을 넣지 못했어요. 다시 눌러 주세요.');
+            setToast(msg);
+            speak(msg);
+            submittingRef.current = false;
+            setSubmitting(false);
         }
     };
 
     // [−]로 마지막 1개를 빼려고 하면 한 번 더 물어봐요 (STEP 7)
     const minus = (line) => {
         if (line.qty > 1) {
-            changeQty(line.key, -1);
+            changeLine(line, -1);
             return;
         }
         const label = script.removeAsk.replace('{label}', removeName(line));
@@ -114,7 +188,7 @@ export default function ConfirmPage() {
     };
 
     const confirmRemove = () => {
-        changeQty(removeLine.key, -1);
+        changeLine(removeLine, -1);
         setSheet(null);
         setRemoveLine(null);
     };
@@ -126,7 +200,7 @@ export default function ConfirmPage() {
     };
 
     // 🚀 서버 연동: 직원 호출 API 호출
-    const callNow = async (reason) => {
+    const callNow = async () => {
         try {
             const sessionId = localStorage.getItem('sessionId');
             const sessionToken = localStorage.getItem('sessionToken');
@@ -184,6 +258,7 @@ export default function ConfirmPage() {
                                         type="button"
                                         className="confirm-qty__btn"
                                         aria-label={`${line.name} 하나 빼기`}
+                                        disabled={syncing}
                                         onClick={() => minus(line)}
                                     >
                                         −
@@ -193,7 +268,8 @@ export default function ConfirmPage() {
                                         type="button"
                                         className="confirm-qty__btn"
                                         aria-label={`${line.name} 하나 더`}
-                                        onClick={() => changeQty(line.key, 1)}
+                                        disabled={syncing}
+                                        onClick={() => changeLine(line, 1)}
                                     >
                                         +
                                     </button>
@@ -217,8 +293,8 @@ export default function ConfirmPage() {
                 </main>
 
                 <div className="phone__footer">
-                    <BigButton disabled={!cart.length} onClick={submit}>
-                        맞아요, 주문할게요
+                    <BigButton disabled={!cart.length || submitting} onClick={submit}>
+                        {submitting ? '주문 넣는 중…' : '맞아요, 주문할게요'}
                     </BigButton>
                     <BigButton variant="outline" onClick={() => navigate(backTo)}>
                         고칠래요
@@ -234,7 +310,7 @@ export default function ConfirmPage() {
                 >
                     <BigButton onClick={() => setSheet(null)}>계속할게요</BigButton>
                     {idleStage === 1 && (
-                        <BigButton variant="dark" onClick={() => callNow('오래 머무름')}>
+                        <BigButton variant="dark" onClick={() => callNow()}>
                             직원 호출
                         </BigButton>
                     )}
