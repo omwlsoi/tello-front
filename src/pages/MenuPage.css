@@ -1,42 +1,32 @@
-/* 3. 눌러서 주문하기 — 레이아웃은 그대로, 글자만 크게 */
-.menu-phone .app-header__title {
-    font-size: 22px;
-}
-.menu-phone .big-btn {
-    font-size: 21px;
-}
-.menu-phone .toast {
-    padding: 14px 22px;
-    font-size: 19px;
-}
-.menu-phone .sheet__title {
-    font-size: 28px;
-}
-.menu-phone .sheet__desc {
-    font-size: 20px;
-}
+/* 3. 눌러서 주문하기 — 큰 사진 메뉴판 */
 
+/* 탭 (유리 바 안에서 고른 탭만 파랗게) */
 .menu-tabs {
+    margin: 2px 16px 0;
+    padding: 5px;
+    border-radius: 29px;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    padding: 12px 18px 0;
+    gap: 4px;
 }
 .menu-tab {
-    height: 50px;
-    border-radius: 14px;
-    border: 1.5px solid var(--line-strong);
-    background: var(--white);
+    height: 56px;
+    border-radius: 24px;
+    border: 0;
+    background: transparent;
     color: var(--ink);
-    font-size: 19px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 800;
 }
 .menu-tab.is-active {
-    background: var(--ink);
-    border-color: var(--ink);
+    background: var(--blue);
     color: #fff;
+    box-shadow: 0 8px 20px rgba(29, 78, 216, 0.3);
 }
 
+.menu-phone .phone__body {
+    padding-top: 14px;
+}
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -45,10 +35,8 @@
 
 /* MenuCard */
 .menu-card {
-    border-radius: 18px;
-    border: 1.5px solid var(--line);
-    background: var(--white);
-    padding: 10px;
+    border-radius: 24px;
+    padding: 8px 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -56,50 +44,41 @@
     color: var(--ink);
 }
 .menu-card__photo {
-    height: 120px;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 126px;
+    border-radius: 18px;
 }
 .menu-card__name {
-    font-size: 21px;
-    font-weight: 700;
+    padding: 0 6px;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
     line-height: 1.3;
 }
+.menu-card__foot {
+    padding: 0 4px 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 .menu-card__price {
-    font-size: 19px;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--ink-2);
 }
-
-/* 크기 고르기 */
-.menu-sizes {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-}
-.menu-size {
-    min-height: 84px;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--blue);
-    background: var(--white);
-    color: var(--blue-deep);
-    font-size: 21px;
-    font-weight: 700;
+.menu-card__plus {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background: var(--blue);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
 }
-.menu-sizes--three {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
+
 /* 옵션 고르기 (크기·온도·얼음 한 화면) */
 .menu-options {
     width: 100%;
-    max-height: calc(var(--phone-h) - 140px);
+    max-height: calc(var(--phone-h) - 120px);
     overflow: auto;
     display: flex;
     flex-direction: column;
@@ -107,9 +86,21 @@
 }
 .menu-options__head {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    gap: 4px;
+}
+.menu-options__title {
+    display: flex;
+    flex-direction: column;
+    align-items: inherit;
+    gap: 4px;
+}
+.menu-options__name {
+    margin: 4px 0 0;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
 }
 .menu-opt {
     display: flex;
@@ -119,18 +110,172 @@
 }
 .menu-opt__label {
     font-size: 19px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--ink);
 }
-.menu-options .menu-size {
-    min-height: 64px;
+.menu-sizes {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.menu-sizes--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.menu-size {
+    min-height: 72px;
+    border-radius: 24px;
+    background: var(--white);
+    color: var(--ink);
+    border: 2.5px solid var(--blue);
+    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.14);
+    font-size: 22px;
+    font-weight: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+.menu-size span {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink-2);
 }
 /* 고른 버튼은 파랗게 채워요 */
 .menu-size.is-selected {
     background: var(--blue);
     color: #fff;
+    border-color: var(--blue);
+    box-shadow: var(--blue-shadow);
 }
-.menu-size span {
-    font-size: 17px;
-    font-weight: 500;
+.menu-size.is-selected span {
+    color: #fff;
+}
+
+/* ===== 큰 글씨 모드 (X1.5) ===== */
+.phone--big .menu-tabs {
+    margin: 0 16px;
+    padding: 6px;
+    border-radius: 32px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+.phone--big .menu-tab {
+    height: auto;
+    min-height: 60px;
+    padding: 4px 10px;
+    border-radius: 26px;
+    font-size: 30px;
+    font-weight: 900;
+}
+/* 세 번째 탭(빵·디저트)은 한 줄 전체 */
+.phone--big .menu-tab:nth-child(3) {
+    grid-column: 1 / -1;
+}
+
+/* 메뉴 카드: 그림 왼쪽 · 이름과 가격 오른쪽, 한 줄에 하나 */
+.phone--big .menu-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+.phone--big .menu-card {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 14px;
+    row-gap: 6px;
+    padding: 12px;
+    border-radius: 28px;
+}
+.phone--big .menu-card__photo {
+    grid-row: 1 / 3;
+    width: 82px;
+    height: 82px;
+    border-radius: 22px;
+}
+.phone--big .menu-card__photo svg {
+    width: 69px;
+    height: 69px;
+}
+.phone--big .menu-card__name {
+    align-self: end;
+    padding: 0;
+    font-size: 30px;
+    line-height: 1.2;
+}
+.phone--big .menu-card__foot {
+    align-self: start;
+    gap: 8px;
+    padding: 0;
+}
+.phone--big .menu-card__price {
+    font-size: 27px;
+    font-weight: 800;
+}
+.phone--big .menu-card__plus {
+    width: 45px;
+    height: 45px;
+    border-radius: 30px;
+    flex-shrink: 0;
+}
+.phone--big .menu-card__plus svg {
+    width: 21px;
+    height: 21px;
+}
+
+/* 옵션 고르기: 스크롤 없이 한 화면 (그림·이름은 가로로, 버튼은 나란히) */
+.phone--big .menu-options {
+    gap: 12px;
+}
+.phone--big .menu-options__head {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    text-align: left;
+}
+.phone--big .menu-options__title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.phone--big .menu-options__name {
+    margin: 0;
+    font-size: 33px;
+    line-height: 1.2;
+}
+.phone--big .menu-options .sheet__desc {
+    margin: 0;
+    font-size: 22px;
+}
+.phone--big .menu-opt {
+    gap: 6px;
+}
+.phone--big .menu-opt__label {
+    font-size: 26px;
+    font-weight: 900;
+}
+.phone--big .menu-sizes {
+    gap: 8px;
+}
+.phone--big .menu-size {
+    min-height: 76px;
+    border-radius: 24px;
+    font-size: 30px;
+    line-height: 1.2;
+}
+.phone--big .menu-size span {
+    font-size: 22px;
+    font-weight: 800;
+}
+.phone--big .menu-sizes--three .menu-size {
+    min-height: 68px;
+}
+.phone--big .menu-options .big-btn {
+    min-height: 68px;
+}
+
+/* 아래 버튼 화살표는 숨겨서 한 줄로 */
+.phone--big.menu-phone .phone__footer .big-btn svg {
+    display: none;
 }

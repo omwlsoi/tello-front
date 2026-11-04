@@ -1,77 +1,303 @@
 /* 1. 시작 화면 */
-.entry-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-left: 4px;
+
+/* 텔로 인사 카드 */
+.entry-hero {
+    position: relative;
+    overflow: hidden;
+    margin: 2px 16px 0;
+    height: 236px;
+    flex-shrink: 0;
+    border-radius: 32px;
+    background: radial-gradient(70% 70% at 30% 70%, rgba(255, 248, 224, 0.95) 0%, rgba(236, 242, 255, 0.75) 60%, rgba(255, 255, 255, 0.5) 100%);
 }
-.entry-brand__badge {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--blue-deep);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 17px;
+.entry-hero__tello {
+    position: absolute;
+    left: -36px;
+    top: 9px;
 }
-.entry-sub {
-    margin-bottom: 6px;
+.entry-hero__bubble {
+    position: absolute;
+    right: 13px;
+    top: 24px;
+    width: 164px;
+    padding: 16px 10px 16px 14px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+/* 말풍선 꼬리 */
+.entry-hero__bubble::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 46px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-left: 2px solid var(--glass-line);
+    border-bottom: 2px solid var(--glass-line);
+    border-radius: 0 0 0 4px;
+    transform: rotate(45deg);
+}
+.entry-hero__hello {
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--sub);
+}
+.entry-hero__hello b {
+    color: var(--blue);
+}
+.entry-hero__ask {
+    font-family: var(--font-round);
+    font-size: 25px;
+    font-weight: 400;
+    line-height: 1.25;
+    white-space: nowrap;
 }
 
-.entry-card {
+/* 주문 방법 카드 */
+.entry-options {
+    flex: 1;
+    min-height: 0;
+    padding: 14px 16px 18px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 22px;
-    border-radius: var(--radius-lg);
-    border: 2px solid var(--ink);
-    background: var(--white);
+}
+.entry-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+    border-radius: 28px;
     color: var(--ink);
     text-align: left;
 }
 .entry-card--voice {
-    background: var(--blue);
-    border-color: var(--blue);
+    flex: 1.28;
+    min-height: 0;
+    background: linear-gradient(140deg, #3b74ff 0%, #1d4ed8 60%, #1a44c2 100%);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.45);
     color: #fff;
+}
+.entry-card--menu {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 20px;
+    gap: 4px;
 }
 .entry-card__tag {
     align-self: flex-start;
-    padding: 3px 12px;
+    padding: 4px 11px;
     border-radius: 999px;
-    background: #fff;
-    color: var(--blue);
-    font-size: 14px;
-    font-weight: 700;
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
 }
 .entry-card__row {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
 }
-.entry-card__icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 32px;
-    background: rgba(255, 255, 255, 0.18);
+.entry-card__name {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+}
+.entry-card__name--menu {
+    font-size: 26px;
+}
+.entry-card__mark {
+    background: linear-gradient(transparent 58%, rgba(255, 255, 255, 0.32) 58%);
+    padding: 0 2px;
+}
+.entry-card__mark--blue {
+    color: var(--blue);
+    background: linear-gradient(transparent 58%, rgba(91, 140, 255, 0.28) 58%);
+}
+.entry-card__desc {
+    margin: auto 0;
+    font-size: 18px;
+    line-height: 1.75;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+}
+.entry-card__desc--menu {
+    margin: 9px 0 auto;
+    line-height: 1.45;
+    font-weight: 400;
+    color: var(--ink-2);
+}
+.entry-card__desc--menu b {
+    color: var(--ink);
+}
+.entry-card__desc--menu .entry-card__em {
+    color: var(--blue);
+}
+.entry-card__quote {
+    display: inline-block;
+    padding: 3px 11px;
+    margin-right: 4px;
+    border-radius: 14px 14px 14px 4px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.4;
+    box-shadow: 0 4px 10px rgba(10, 30, 100, 0.2);
+}
+.entry-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.entry-pill {
+    height: 56px;
+    padding: 0 18px;
+    border-radius: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 800;
+}
+.entry-pill--white {
+    background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
+    color: var(--blue);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 20px rgba(10, 30, 100, 0.28), inset 0 -2px 0 rgba(29, 78, 216, 0.12);
+}
+.entry-pill--blue,
+.entry-round--blue {
+    background: linear-gradient(180deg, #4a7df7 0%, #2d61e6 100%);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 8px 18px rgba(29, 78, 216, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.entry-round {
+    width: 54px;
+    height: 54px;
+    border-radius: 27px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
 }
-.entry-card__icon--soft {
-    background: var(--soft);
+.entry-round--white {
+    background: #fff;
 }
-.entry-card__name {
+
+/* ===== 큰 글씨 모드 (X1.5) ===== */
+.entry-hero--big {
+    height: auto;
+    margin: 0 16px;
+    padding: 20px;
+    border-radius: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.entry-hero__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.entry-hero--big .entry-hero__hello {
     font-size: 26px;
+    line-height: 1.35;
+}
+.entry-hero--big .entry-hero__ask {
+    white-space: nowrap;
+    font-size: 30px;
+    line-height: 1.2;
+}
+
+.phone--big .entry-options {
+    flex: 1;
+    padding: 16px;
+    gap: 16px;
+}
+.phone--big .entry-card {
+    flex: none;
+    gap: 0;
+    padding: 22px 18px;
+    border-radius: 32px;
+}
+.phone--big .entry-card__tag {
+    margin-bottom: 12px;
+    padding: 4px 16px;
+    font-size: 24px;
+    font-weight: 900;
+}
+/* 큰 제목 한 줄 + 바로 옆에 소리 아이콘 */
+.phone--big .entry-card__row {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+}
+.phone--big .entry-card__row svg {
+    flex-shrink: 0;
+    margin: 0;
+}
+.phone--big .entry-card__name {
+    white-space: nowrap;
+    font-size: 40px;
+    line-height: 1.2;
+}
+.phone--big .entry-card__name--menu {
+    font-size: 40px;
+}
+/* 큰 제목과 설명 사이 간격 */
+.phone--big .entry-card__quote {
+    align-self: flex-start;
+    margin: 16px 0 0;
+    padding: 8px 14px;
+    border-radius: 20px 20px 20px 6px;
+    white-space: nowrap;
+    font-size: 21px;
+    line-height: 1.3;
+}
+.phone--big .entry-card__desc {
+    margin: 10px 0 0;
+    font-size: 26px;
+    line-height: 1.4;
     font-weight: 700;
+    color: #fff;
 }
-.entry-card__desc {
-    font-size: 17px;
-    line-height: 1.5;
-}
-.entry-card__desc--sub {
+.phone--big .entry-card__desc--menu {
+    margin-top: 16px;
+    font-weight: 400;
     color: var(--ink-2);
+}
+.phone--big .entry-pill {
+    width: 100%;
+    height: auto;
+    min-height: 66px;
+    margin-top: 20px;
+    padding: 10px 20px;
+    border-radius: 32px;
+    justify-content: center;
+    gap: 10px;
+    font-size: 26px;
+    font-weight: 900;
+}
+
+/* "어떻게 주문할까요?"도 말풍선으로 (글씨는 그대로) */
+.entry-hero__ask--bubble {
+    align-self: flex-end;
+    margin: 0;
+    padding: 8px 18px;
+    border-radius: 22px 22px 6px 22px;
+    background: #fff;
+    border: 2px solid var(--glass-line);
+    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.1);
+}
+/* 말로 / 주문하기 + 소리 아이콘은 "주문하기" 바로 옆 */
+.phone--big .entry-card__name svg {
+    margin-left: 12px;
+    vertical-align: -2px;
 }

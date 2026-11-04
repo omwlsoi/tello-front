@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BellIcon, MarkIcon } from '../components/common/Header';
+import { Tello } from '../components/common/Header';
 import Toast from '../components/common/Toast';
 import {
     MODE_LABELS,
@@ -9,10 +9,11 @@ import {
 import storeInfo from '../mocks/store.json';
 import './BossPage.css';
 
-const BUTTON = {
-    new: { label: '준비 시작', className: 'boss-card__btn--dark' },
-    prep: { label: '준비 완료', className: 'boss-card__btn--blue' },
-    ready: { label: '손님이 받아 갔어요', className: 'boss-card__btn--green' },
+// 상태별 안내·버튼 (stripe: 카드 왼쪽 색 막대)
+const STATE = {
+    new: { hint: '눌러서 만들기 시작', btn: '준비 시작', primary: true },
+    prep: { hint: '다 되면 손님 폰에 알려요', btn: '준비 완료', primary: true },
+    ready: { hint: '손님 폰에 알림 보냄', btn: '받아 갔어요', primary: false },
 };
 
 const ago = (createdAt, now) => {
@@ -53,40 +54,50 @@ export default function BossPage() {
             </div>
 
             <div className="boss-tablet">
-                <header className="boss-header">
+                <header className="boss-header glass">
                     <span className="boss-header__title">
+                        <span className="brand-dot" />
                         {storeInfo.name} 주문 현황
                         <span className="boss-header__badge">MVP 가상 화면 · POS 미연동</span>
                     </span>
-                    <span className="boss-header__count">
-                        새 주문 {nNew} · 준비 중 {nPrep}
+                    <span className="boss-header__counts">
+                        <span className="boss-count boss-count--new">
+                            <span className="boss-dot boss-dot--yellow" />새 주문 {nNew}
+                        </span>
+                        <span className="boss-count">
+                            <span className="boss-dot boss-dot--blue" />
+                            만드는 중 {nPrep}
+                        </span>
                     </span>
                 </header>
 
-                {calls.length > 0 && (
-                    <div className="boss-calls">
-                        {calls.map((call) => (
-                            <div key={call.id} className="boss-call" role="alert">
-                                <span className="boss-call__text">
-                                    <BellIcon size={24} />
-                                    직원 호출 —{' '}
-                                    {call.orderNo ? `${call.orderNo}번 손님이` : '주문 중인 손님이'} 도움을
-                                    요청했어요
-                                    <span className="boss-call__reason">이유: {call.reason}</span>
+                {calls.map((call) => (
+                    <div key={call.id} className="boss-call glass" role="alert">
+                        <span className="boss-call__main">
+                            <Tello face="sad" size={46} />
+                            <span className="boss-call__text">
+                                <span className="boss-call__eyebrow">
+                                    <span className="boss-dot boss-dot--orange" />
+                                    직원 호출 · {ago(call.createdAt, now) === '방금' ? '지금' : ago(call.createdAt, now)}
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        ackCall(call.id);
-                                        setToast('직원이 가고 있어요');
-                                    }}
-                                >
-                                    확인했어요
-                                </button>
-                            </div>
-                        ))}
+                                <span className="boss-call__title">
+                                    {call.orderNo ? `${call.orderNo}번 손님이` : '주문 중인 손님이'} 도움을 요청했어요
+                                </span>
+                            </span>
+                            <span className="boss-call__reason">이유: {call.reason}</span>
+                        </span>
+                        <button
+                            type="button"
+                            className="pill-btn"
+                            onClick={() => {
+                                ackCall(call.id);
+                                setToast('직원이 가고 있어요');
+                            }}
+                        >
+                            확인했어요
+                        </button>
                     </div>
-                )}
+                ))}
 
                 <div className="boss-grid">
                     {orders.length === 0 && (
@@ -96,41 +107,47 @@ export default function BossPage() {
                     )}
                     {orders.map((order) => {
                         const voice = order.mode === 'voice';
+                        const st = STATE[order.status];
                         return (
-                            <article
-                                key={order.no}
-                                className={`boss-card ${order.status === 'new' ? 'is-new' : ''} ${order.status === 'ready' ? 'is-ready' : ''}`}
-                            >
-                                <div className="boss-card__top">
+                            <article key={order.no} className={`boss-card glass is-${order.status}`}>
+                                <span className="boss-card__stripe" />
+                                <div className="boss-card__body">
+                                    <div className="boss-card__top">
+                                        <span className={`boss-card__tag ${voice ? 'is-voice' : ''}`}>
+                                            {MODE_LABELS[order.mode]}
+                                        </span>
+                                        <span className="boss-card__time">
+                                            {order.sample && '예시 · '}
+                                            {ago(order.createdAt, now)}
+                                        </span>
+                                    </div>
                                     <span className="boss-card__no">
                                         {order.no}
-                                        <MarkIcon mark={order.mark} size={28} />
+                                        <small>번</small>
                                     </span>
-                                    <span className="boss-card__time">
-                                        {order.sample && <span className="boss-card__sample">예시</span>}
-                                        {ago(order.createdAt, now)}
-                                    </span>
+                                    <div className="boss-card__items">
+                                        {order.items.map((it, i) => (
+                                            <div key={i}>
+                                                {it.name} ×{it.qty}
+                                                {it.opt ? ` · ${it.opt}` : ''}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {voice && <span className="boss-card__hint">번호를 크게 불러 주세요</span>}
+                                    <div className="boss-card__foot">
+                                        <span className="boss-card__state">
+                                            <b>{STATUS_LABELS[order.status]}</b>
+                                            <span>{st.hint}</span>
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className={`boss-card__btn ${st.primary ? '' : 'is-outline'}`}
+                                            onClick={() => advanceOrder(order.no)}
+                                        >
+                                            {st.btn}
+                                        </button>
+                                    </div>
                                 </div>
-                                <span className={`boss-card__tag ${voice ? 'is-voice' : ''}`}>
-                                    {MODE_LABELS[order.mode]}
-                                </span>
-                                <div className="boss-card__items">
-                                    {order.items.map((it, i) => (
-                                        <div key={i}>
-                                            {it.name} ×{it.qty}
-                                            {it.opt ? ` · ${it.opt}` : ''}
-                                        </div>
-                                    ))}
-                                </div>
-                                {voice && <div className="boss-card__hint">번호를 크게 불러주세요</div>}
-                                <span className="boss-card__state">{STATUS_LABELS[order.status]}</span>
-                                <button
-                                    type="button"
-                                    className={`boss-card__btn ${BUTTON[order.status].className}`}
-                                    onClick={() => advanceOrder(order.no)}
-                                >
-                                    {BUTTON[order.status].label}
-                                </button>
                             </article>
                         );
                     })}

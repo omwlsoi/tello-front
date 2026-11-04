@@ -1,51 +1,82 @@
-/* ===== 내폰이 키오스크(Tello) 디자인 토큰 ===== */
+/* ===== Tello 디자인 토큰 (시연 화면 디자인 기준) ===== */
 :root {
+    /* 브랜드 컬러 */
+    --brand-blue: #1d4ed8;
+    --brand-yellow: #ffc93c;
+    --brand-white: #ffffff;
+    --brand-black: #000000;
+
     /* 무대(시연 배경) */
-    --page: #e9ecf2;
-    --page-ink: #1b1f27;
-    --page-sub: #4e5563;
+    --page: #eceef3;
+    --page-ink: #14213d;
+    --page-sub: #3c4252;
     --panel: #ffffff;
     --panel-line: #d5dae3;
 
-    /* 폰 화면 */
-    --white: #ffffff;
-    --ink: #1a1a1a;
-    --ink-2: #3d424d;
-    --sub: #535a67;
-    --line: #e1e4eb;
-    --line-strong: #c4cad6;
-    --soft: #f3f5f9;
+    /* 글씨 */
+    --white: var(--brand-white);
+    --ink: #14213d;
+    --ink-2: #232e48;
+    --sub: #2f3a55;
+    --mute: #3a4560;
 
-    /* 포인트 */
-    --blue: #2b5bd7;
-    --blue-deep: #1e44a8;
-    --blue-soft: #eaf0ff;
-    --blue-ring: #dce5fb;
+    /* 파랑 */
+    --blue: var(--brand-blue);
+    --blue-2: #2563eb;
+    --blue-3: #2554d6;
+    --blue-light: #5b8cff;
+    --blue-soft: #dce7ff;
+    --blue-shadow: 0 12px 28px rgba(29, 78, 216, 0.34);
 
-    /* 상태 색 */
-    --warn-bg: #fff1db;
-    --warn-line: #e0992f;
-    --warn-ink: #5c3d00;
-    --warn-ink-strong: #8a5a00;
-    --ok-bg: #e3f4e6;
-    --ok-ink: #1f6e32;
+    /* 노랑 (검정 글씨와 함께) */
+    --yellow: var(--brand-yellow);
+    --yellow-soft: rgba(255, 233, 160, 0.9);
+    --yellow-ring: rgba(255, 201, 60, 0.45);
 
-    /* 주문 진행 단계 색 (흰 글씨 대비 4.5:1 이상) */
-    --stage-new: #2b5bd7;
-    --stage-prep: #a85300;
-    --stage-ready: #1f7a38;
+    /* 주황 (막혔을 때·주의) */
+    --orange: #e97a2e;
+    --orange-bg: rgba(255, 232, 214, 0.75);
+    --orange-line: rgba(255, 200, 165, 0.95);
+    --orange-ink: #9a4310;
+    --warn-bg: rgba(255, 236, 214, 0.85);
+    --warn-icon: #b4541a;
+    --warn-ink: #5a3410;
+
+    /* 직원 부르기 버튼 */
+    --staff: #0f1a33;
+
+    /* 유리 카드 */
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-line: rgba(190, 203, 230, 0.95);
+    --glass-shadow: 0 10px 28px rgba(20, 33, 61, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+    --line: rgba(20, 33, 61, 0.08);
+
+    /* 화면 배경 (위·옆·아래 모두 연파랑 번짐) */
+    --screen-bg:
+        linear-gradient(180deg, rgba(220, 231, 255, 0.95) 0%, rgba(220, 231, 255, 0.55) 28%, rgba(220, 231, 255, 0) 55%),
+        radial-gradient(60% 40% at 92% 52%, #dce7ff 0%, rgba(214, 228, 255, 0) 70%),
+        radial-gradient(70% 40% at 18% 96%, #e6edff 0%, rgba(227, 236, 255, 0) 70%),
+        #fbfcfe;
+    --tile-bg: radial-gradient(70% 70% at 50% 45%, #fffcf0 0%, #fff4d6 100%);
 
     /* 글꼴 */
-    --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    --font: 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    --font-round: 'Jua', 'Pretendard Variable', 'Pretendard', sans-serif;
 
     /* 크기 */
     --phone-w: 390px;
     --phone-h: 844px;
-    --tap: 48px; /* 최소 터치 영역 */
-    --btn-h: 60px;
-    --radius-lg: 20px;
-    --radius-md: 16px;
-    --radius-sm: 12px;
+    --tap: 56px; /* 최소 터치 영역 */
+    --btn-h: 68px;
+}
+
+/* ===== 공통 모양 ===== */
+.glass {
+    background: var(--glass-bg);
+    border: 2px solid var(--glass-line);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    box-shadow: var(--glass-shadow);
 }
 
 /* ===== 시연 무대: 폰 + 시연 버튼 ===== */
@@ -62,12 +93,15 @@
 }
 
 .phone {
+    word-break: keep-all;
+    overflow-wrap: break-word;
     width: var(--phone-w);
     max-width: 100%;
     height: var(--phone-h);
-    background: var(--white);
+    background: var(--screen-bg);
     color: var(--ink);
-    border: 10px solid #111318;
+    letter-spacing: -0.01em;
+    border: 10px solid var(--brand-black);
     border-radius: 36px;
     box-shadow: 0 20px 50px rgba(10, 20, 40, 0.25);
     position: relative;
@@ -80,16 +114,14 @@
     flex: 1;
     min-height: 0;
     overflow: auto;
-    padding: 20px 18px;
+    padding: 2px 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
 }
 
 .phone__footer {
-    padding: 12px 18px 18px;
-    border-top: 1px solid var(--line);
-    background: var(--white);
+    padding: 12px 16px 18px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -115,179 +147,339 @@
 
 /* ===== 헤더 ===== */
 .app-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'left title right';
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 12px;
-    min-height: 48px;
-    border-bottom: 1px solid var(--line);
-    background: var(--white);
+    gap: 10px;
+    padding: 14px 16px;
 }
 .app-header__side {
-    min-width: var(--tap);
+    grid-area: left;
     display: flex;
     align-items: center;
+    gap: 8px;
+    justify-self: start;
 }
 .app-header__side--end {
-    justify-content: flex-end;
+    grid-area: right;
+    justify-self: end;
 }
 .app-header__title {
-    font-size: 19px;
-    font-weight: 700;
+    grid-area: title;
+    justify-self: start;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
 }
 
+/* 로고 + 가게 이름 헤더 (시작·주문 완료) */
+.brand-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+}
+.brand-header__store {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+}
+.brand-dot {
+    width: 16px;
+    height: 22px;
+    border-radius: 8px;
+    background: linear-gradient(#ffd75e, #5b8cff);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+    flex-shrink: 0;
+}
+
+/* 동그란 아이콘 버튼 (뒤로가기 · 메뉴판 · 마이크) */
 .icon-btn {
     width: var(--tap);
     height: var(--tap);
-    border-radius: 24px;
-    border: 0;
-    background: transparent;
-    color: var(--ink);
+    border-radius: 28px;
+    background: var(--white);
+    color: var(--blue);
+    border: 2.5px solid var(--blue);
+    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.14);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-}
-.icon-btn--outline {
-    border: 1.5px solid var(--line-strong);
+    flex-shrink: 0;
 }
 .icon-btn--blue {
-    border: 1.5px solid var(--blue);
-    color: var(--blue);
+    background: var(--blue);
+    color: #fff;
+    border: 2px solid var(--blue);
+    box-shadow: var(--blue-shadow);
 }
 
+/* 알약 버튼 */
 .pill-btn {
-    height: 44px;
-    padding: 0 14px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid var(--line-strong);
+    box-sizing: border-box;
+    height: 56px;
+    padding: 0 18px;
+    border-radius: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 800;
+    flex-shrink: 0;
+    background: var(--blue);
+    color: #fff;
+    border: 2px solid var(--blue);
+    box-shadow: var(--blue-shadow);
+}
+.pill-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* 스크롤 영역 (큰 글씨 모드에서는 화면 전체가 아래로 길어져요) */
+.phone__scroll {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 큰 글씨 모드 버튼 (확장 아이콘 + "큰 글씨") */
+.zoom-btn {
+    height: 48px;
+    padding: 0 12px 0 10px;
+    border-radius: 24px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     background: var(--white);
     color: var(--ink);
-    font-size: 16px;
-    font-weight: 700;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 4px 12px rgba(20, 33, 61, 0.12);
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    flex-shrink: 0;
+}
+.zoom-btn.is-on {
+    background: var(--yellow);
+    box-shadow: 0 6px 16px rgba(20, 33, 61, 0.16);
+}
+.phone--big .zoom-btn {
+    height: 60px;
+    padding: 0 16px 0 12px;
+    border-radius: 28px;
+    gap: 6px;
+    font-size: 22px;
+}
+.phone--big .zoom-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* 기본 화면 헤더는 좁아서 제목 옆 꾸밈 그림은 숨겨요 (큰 글씨 모드에서는 제목이 따로 한 줄이라 보여요) */
+.phone:not(.phone--big) .app-header .app-header__title svg {
+    display: none;
 }
 
 /* ===== 큰 버튼 ===== */
 .big-btn {
     width: 100%;
     min-height: var(--btn-h);
-    border-radius: var(--radius-md);
-    border: 0;
-    font-size: 19px;
-    font-weight: 700;
+    border-radius: 30px;
+    font-size: 21px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     padding: 0 16px;
+    text-decoration: none;
 }
 .big-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: default;
 }
 .big-btn--primary {
     background: var(--blue);
     color: #fff;
+    border: 2px solid var(--blue);
+    box-shadow: var(--blue-shadow);
 }
 .big-btn--dark {
-    background: var(--ink);
+    background: var(--staff);
     color: #fff;
+    border: 2px solid var(--staff);
 }
 .big-btn--outline {
     background: var(--white);
-    color: var(--ink);
-    border: 2px solid var(--ink);
+    color: var(--blue);
+    border: 2.5px solid var(--blue);
+    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.14);
 }
 .big-btn--soft {
-    min-height: 54px;
-    font-size: 17px;
-    background: var(--blue-soft);
-    color: var(--blue-deep);
-    border: 2px solid var(--blue);
+    min-height: 56px;
+    font-size: 18px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--blue);
+    border: 2px solid var(--glass-line);
 }
 
 /* ===== 바텀시트 ===== */
 .sheet-dim {
     position: absolute;
     inset: 0;
-    background: rgba(15, 18, 25, 0.55);
+    background: rgba(20, 33, 61, 0.28);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     z-index: 5;
 }
 .sheet {
-    background: var(--white);
-    border-radius: 24px 24px 0 0;
-    padding: 24px 20px;
+    max-height: 100%;
+    overflow-y: auto;
+    background: rgba(250, 251, 255, 0.92);
+    border-top: 1px solid #fff;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 32px 32px 0 0;
+    padding: 24px 20px 22px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
     text-align: center;
 }
 .sheet__icon {
-    width: 68px;
-    height: 68px;
-    border-radius: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .sheet__title {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
+    margin: 4px 0 0;
+    white-space: pre-line;
+    font-family: var(--font-round);
+    font-size: 26px;
+    font-weight: 400;
     color: var(--ink);
 }
 .sheet__desc {
-    margin: 0;
-    font-size: 17px;
+    margin: 0 0 6px;
+    white-space: pre-line;
+    font-size: 19px;
     line-height: 1.5;
     color: var(--sub);
+}
+
+/* 확인 창 안 마이크 버튼 ("말로 답해도 돼요") */
+.sheet-mic {
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 24px;
+    background: transparent;
+    color: var(--blue);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 800;
+}
+.phone--big .sheet-mic {
+    min-height: 56px;
+    font-size: 22px;
+}
+/* 문장이 긴 확인 창 제목 */
+.sheet--long .sheet__title {
+    font-size: 24px;
+    line-height: 1.35;
+}
+.phone--big .sheet--long .sheet__title {
+    font-size: 30px;
 }
 
 /* ===== 토스트 ===== */
 .toast {
     position: absolute;
     left: 50%;
-    top: 84px;
+    top: 150px;
     transform: translateX(-50%);
-    background: var(--ink);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 999px;
-    font-size: 16px;
-    font-weight: 700;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--glass-line);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--glass-shadow);
+    color: var(--ink);
+    padding: 8px 20px 8px 8px;
+    border-radius: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 19px;
+    font-weight: 800;
     white-space: nowrap;
     z-index: 6;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+.toast__check {
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    background: var(--blue);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 /* ===== 공통 글 ===== */
 .screen-title {
     margin: 0;
-    font-size: 27px;
-    font-weight: 700;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
     line-height: 1.3;
     color: var(--ink);
     text-wrap: balance;
 }
 .screen-desc {
     margin: 0;
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.5;
     color: var(--sub);
 }
+.eyebrow {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--blue);
+}
 .ai-note {
     margin: 0;
-    padding: 12px 14px;
-    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    border-radius: 18px;
     background: var(--warn-bg);
     color: var(--warn-ink);
-    font-size: 15px;
+    font-size: 18px;
     line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .food-tile {
@@ -295,6 +487,151 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: var(--tile-bg);
+}
+
+/* ===== 큰 글씨 모드 (X1.5) — 글씨·버튼 1.5배 =====
+   기본 화면처럼 위(헤더)·아래(버튼)는 고정하고 가운데(phone__body)만 스크롤해요.
+   가운데 영역이 따로 없는 시작 화면만 화면 전체가 스크롤돼요. */
+.phone--big {
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    word-break: keep-all;
+}
+.phone--big .phone__scroll {
+    overflow-y: auto;
+}
+.phone--big .phone__body {
+    padding: 2px 16px 12px;
+    gap: 14px;
+}
+.phone--big .phone__footer {
+    padding: 16px 16px 20px;
+    gap: 12px;
+}
+
+/* 헤더: 1줄 [뒤로] … [큰 글씨] [버튼], 2줄 큰 제목 */
+.phone--big .app-header {
+    grid-template-areas:
+        'left . right'
+        'title title title';
+    row-gap: 10px;
+    padding: 12px 16px 10px;
+}
+.phone--big .app-header__title {
+    padding: 0 4px;
+    gap: 8px;
+    font-size: 30px;
+}
+.phone--big .app-header__title svg {
+    width: 28px;
+    height: 28px;
+}
+.phone--big .icon-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+}
+.phone--big .icon-btn svg {
+    width: 26px;
+    height: 26px;
+}
+.phone--big .brand-header {
+    row-gap: 10px;
+}
+.phone--big .brand-header > svg {
+    height: 40px;
+}
+.phone--big .brand-header .zoom-btn {
+    margin-left: auto;
+}
+.phone--big .brand-header__store {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    padding: 0 4px;
+    gap: 10px;
+    font-size: 30px;
+}
+.phone--big .brand-dot {
+    width: 16px;
+    height: 22px;
+    border-radius: 11px;
+}
+
+/* 공통 글·버튼 */
+.phone--big .screen-title {
+    margin: 0 4px 4px;
+    font-size: 45px;
+    line-height: 1.2;
+}
+.phone--big .screen-desc {
+    font-size: 27px;
+}
+.phone--big .eyebrow {
+    font-size: 30px;
+    font-weight: 900;
+}
+.phone--big .big-btn {
+    min-height: 72px;
+    padding: 12px 20px;
+    border-radius: 36px;
+    gap: 12px;
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+.phone--big .big-btn svg {
+    width: 24px;
+    height: 24px;
+}
+.phone--big .ai-note {
+    align-items: flex-start;
+    padding: 14px 18px;
+    border-radius: 24px;
+    gap: 12px;
+    font-size: 27px;
+    line-height: 1.4;
+}
+.phone--big .ai-note svg {
+    width: 27px;
+    height: 27px;
+    margin-top: 6px;
+}
+/* 바텀시트 · 토스트 */
+.phone--big .sheet {
+    gap: 12px;
+    padding: 24px 20px;
+    border-radius: 36px 36px 0 0;
+}
+.phone--big .sheet__title {
+    font-size: 39px;
+    line-height: 1.25;
+}
+.phone--big .sheet__desc {
+    font-size: 28px;
+    line-height: 1.35;
+}
+.phone--big .toast {
+    left: 16px;
+    right: 16px;
+    top: 184px;
+    transform: none;
+    padding: 14px 18px 14px 14px;
+    gap: 14px;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.3;
+    white-space: normal;
+}
+.phone--big .toast__check {
+    width: 45px;
+    height: 45px;
+    border-radius: 30px;
+}
+.phone--big .toast__check svg {
+    width: 24px;
+    height: 24px;
 }
 
 /* ===== 시연 버튼 패널 ===== */
@@ -316,7 +653,7 @@
 .demo-panel__box {
     background: var(--panel);
     border: 1px solid var(--panel-line);
-    border-radius: var(--radius-md);
+    border-radius: 16px;
     padding: 14px;
     display: flex;
     flex-direction: column;
