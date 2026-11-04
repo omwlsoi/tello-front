@@ -17,7 +17,7 @@ export default function EntryPage() {
     const start = async (mode) => {
         try {
             // 기본 매장 ID (필요에 따라 변경 가능)
-            const storeId = "store_default_01"; 
+            const storeId = "store_001"; 
 
             // 백엔드 세션 생성 API 호출 (POST /api/sessions)
             const sessionData = await createSession(storeId);

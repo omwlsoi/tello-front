@@ -1,13 +1,19 @@
-/* 3. 눌러서 주문하기 — 큰 사진 메뉴판 */
+/* 1. 시작 화면 */
 
-/* 탭 (유리 바 안에서 고른 탭만 파랗게) */
-.menu-tabs {
+/* 텔로 인사 카드 */
+.entry-hero {
+    position: relative;
+    overflow: hidden;
     margin: 2px 16px 0;
-    padding: 5px;
-    border-radius: 29px;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
+    height: 236px;
+    flex-shrink: 0;
+    border-radius: 32px;
+    background: radial-gradient(70% 70% at 30% 70%, rgba(255, 248, 224, 0.95) 0%, rgba(236, 242, 255, 0.75) 60%, rgba(255, 255, 255, 0.5) 100%);
+}
+.entry-hero__tello {
+    position: absolute;
+    left: -36px;
+    top: 9px;
 }
 .entry-hero__bubble {
     position: absolute;
@@ -40,189 +46,172 @@
     line-height: 1.4;
     color: var(--sub);
 }
-.menu-tab.is-active {
-    background: var(--blue);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(29, 78, 216, 0.3);
+.entry-hero__hello b {
+    color: var(--blue);
+}
+.entry-hero__ask {
+    font-family: var(--font-round);
+    font-size: 25px;
+    font-weight: 400;
+    line-height: 1.25;
+    white-space: nowrap;
 }
 
-.menu-phone .phone__body {
-    padding-top: 14px;
-}
-.menu-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-/* MenuCard */
-.menu-card {
-    border-radius: 24px;
-    padding: 8px 8px 12px;
+/* 주문 방법 카드 */
+.entry-options {
+    flex: 1;
+    min-height: 0;
+    padding: 14px 16px 18px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    text-align: left;
+    gap: 12px;
+}
+.entry-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+    border-radius: 28px;
     color: var(--ink);
+    text-align: left;
 }
-.menu-card__photo {
-    height: 126px;
-    border-radius: 18px;
+.entry-card--voice {
+    flex: 1.28;
+    min-height: 0;
+    background: linear-gradient(140deg, #3b74ff 0%, #1d4ed8 60%, #1a44c2 100%);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    color: #fff;
 }
-.menu-card__name {
-    padding: 0 6px;
-    font-size: 20px;
+.entry-card--menu {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 20px;
+    gap: 4px;
+}
+.entry-card__tag {
+    align-self: flex-start;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+}
+.entry-card__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.entry-card__name {
+    font-size: 30px;
     font-weight: 900;
     letter-spacing: -0.04em;
-    line-height: 1.3;
 }
-.menu-card__foot {
-    padding: 0 4px 0 6px;
+.entry-card__name--menu {
+    font-size: 26px;
+}
+.entry-card__mark {
+    background: linear-gradient(transparent 58%, rgba(255, 255, 255, 0.32) 58%);
+    padding: 0 2px;
+}
+.entry-card__mark--blue {
+    color: var(--blue);
+    background: linear-gradient(transparent 58%, rgba(91, 140, 255, 0.28) 58%);
+}
+.entry-card__desc {
+    margin: auto 0;
+    font-size: 18px;
+    line-height: 1.75;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+}
+.entry-card__desc--menu {
+    margin: 9px 0 auto;
+    line-height: 1.45;
+    font-weight: 400;
+    color: var(--ink-2);
+}
+.entry-card__desc--menu b {
+    color: var(--ink);
+}
+.entry-card__desc--menu .entry-card__em {
+    color: var(--blue);
+}
+.entry-card__quote {
+    display: inline-block;
+    padding: 3px 11px;
+    margin-right: 4px;
+    border-radius: 14px 14px 14px 4px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.4;
+    box-shadow: 0 4px 10px rgba(10, 30, 100, 0.2);
+}
+.entry-card__foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
-.menu-card__price {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--ink-2);
-}
-.menu-card__plus {
-    width: 36px;
-    height: 36px;
-    border-radius: 18px;
-    background: var(--blue);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
 
-/* 옵션 고르기 (크기·온도·얼음 한 화면) */
-.menu-options {
-    width: 100%;
-    max-height: calc(var(--phone-h) - 120px);
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-.menu-options__head {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-.menu-options__title {
-    display: flex;
-    flex-direction: column;
-    align-items: inherit;
-    gap: 4px;
-}
-.menu-options__name {
-    margin: 4px 0 0;
-    font-size: 26px;
-    font-weight: 900;
-    letter-spacing: -0.04em;
-}
-.menu-opt {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    text-align: left;
-}
-.menu-opt__label {
-    font-size: 19px;
-    font-weight: 800;
-    color: var(--ink);
-}
-.menu-sizes {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-}
-.menu-sizes--three {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.menu-size {
-    min-height: 72px;
+.entry-pill {
+    height: 56px;
+    padding: 0 18px;
     border-radius: 24px;
-    background: var(--white);
-    color: var(--ink);
-    border: 2.5px solid var(--blue);
-    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.14);
-    font-size: 22px;
-    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 800;
+}
+.entry-pill--white {
+    background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
+    color: var(--blue);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 20px rgba(10, 30, 100, 0.28), inset 0 -2px 0 rgba(29, 78, 216, 0.12);
+}
+.entry-pill--blue,
+.entry-round--blue {
+    background: linear-gradient(180deg, #4a7df7 0%, #2d61e6 100%);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 8px 18px rgba(29, 78, 216, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.entry-round {
+    width: 54px;
+    height: 54px;
+    border-radius: 27px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
 }
-.menu-size span {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--ink-2);
-}
-/* 고른 버튼은 파랗게 채워요 */
-.menu-size.is-selected {
-    background: var(--blue);
-    color: #fff;
-    border-color: var(--blue);
-    box-shadow: var(--blue-shadow);
-}
-.menu-size.is-selected span {
-    color: #fff;
+.entry-round--white {
+    background: #fff;
 }
 
 /* ===== 큰 글씨 모드 (X1.5) ===== */
-.phone--big .menu-tabs {
-    margin: 0 16px;
-    padding: 6px;
-    border-radius: 32px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-}
-.phone--big .menu-tab {
+.entry-hero--big {
     height: auto;
-    min-height: 60px;
-    padding: 4px 10px;
-    border-radius: 26px;
-    font-size: 30px;
-    font-weight: 900;
+    margin: 0 16px;
+    padding: 20px;
+    border-radius: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
-/* 세 번째 탭(빵·디저트)은 한 줄 전체 */
-.phone--big .menu-tab:nth-child(3) {
-    grid-column: 1 / -1;
+.entry-hero__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
-
-/* 메뉴 카드: 그림 왼쪽 · 이름과 가격 오른쪽, 한 줄에 하나 */
-.phone--big .menu-grid {
-    grid-template-columns: minmax(0, 1fr);
+.entry-hero--big .entry-hero__hello {
+    font-size: 26px;
+    line-height: 1.35;
 }
-.phone--big .menu-card {
-    display: grid;
-    grid-template-columns: 82px minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    align-content: center;
-    column-gap: 14px;
-    row-gap: 6px;
-    padding: 12px;
-    border-radius: 28px;
-}
-.phone--big .menu-card__photo {
-    grid-row: 1 / 3;
-    width: 82px;
-    height: 82px;
-    border-radius: 22px;
-}
-.phone--big .menu-card__photo svg {
-    width: 69px;
-    height: 69px;
-}
-.phone--big .menu-card__name {
-    align-self: end;
-    padding: 0;
+.entry-hero--big .entry-hero__ask {
+    white-space: nowrap;
     font-size: 30px;
     line-height: 1.2;
 }
