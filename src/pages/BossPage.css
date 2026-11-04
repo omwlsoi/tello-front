@@ -286,3 +286,62 @@
     border: 2.5px solid var(--blue);
     box-shadow: 0 6px 16px rgba(29, 78, 216, 0.14);
 }
+
+
+/* 관리자 로그인 */
+.boss-login {
+    width: 100%;
+    max-width: 420px;
+    margin-top: 8vh;
+    padding: 32px 28px;
+    border-radius: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+}
+.boss-login__title {
+    margin: 4px 0 0;
+    font-size: 26px;
+    font-weight: 900;
+}
+.boss-login__desc {
+    margin: 0 0 6px;
+    color: var(--sub);
+}
+.boss-login__field {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+    font-weight: 800;
+}
+.boss-login__field input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border-radius: 16px;
+    border: 2px solid var(--glass-line);
+    background: #fff;
+    font: inherit;
+    font-weight: 500;
+}
+.boss-login__field input:focus {
+    outline: 3px solid var(--blue);
+    outline-offset: 1px;
+}
+.boss-login__error {
+    margin: 0;
+    color: #c2410c;
+    font-weight: 700;
+}
+.boss-login__btn {
+    width: 100%;
+    min-height: 56px;
+    margin-top: 6px;
+}
+.boss-login__btn:disabled {
+    opacity: 0.6;
+}

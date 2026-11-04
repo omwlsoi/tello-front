@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tello } from '../components/common/Header';
 import Toast from '../components/common/Toast';
 import {
+    adminLogin,
     getAdminOrders,
     changeOrderStatus,
     getAdminHelpRequests,
@@ -32,7 +33,60 @@ export default function BossPage() {
     const [toast, setToast] = useState('');
     const clearToast = useCallback(() => setToast(''), []);
 
-    const adminToken = localStorage.getItem('adminToken') || 'mock-admin-token';
+    // 관리자 토큰 (POST /api/admin/login → Firebase idToken)
+    const [adminToken, setAdminToken] = useState(() => {
+        try {
+            return localStorage.getItem('adminToken') || '';
+        } catch {
+            return '';
+        }
+    });
+    const [email, setEmail] = useState(import.meta.env.VITE_ADMIN_EMAIL || '');
+    const [password, setPassword] = useState('');
+    const [loggingIn, setLoggingIn] = useState(false);
+    const [loginError, setLoginError] = useState('');
+    const autoTried = useRef(false);
+
+    const saveToken = (token) => {
+        try {
+            if (token) localStorage.setItem('adminToken', token);
+            else localStorage.removeItem('adminToken');
+        } catch {
+            // 저장소를 못 쓰는 환경이면 이번 화면에서만 써요
+        }
+        setAdminToken(token);
+    };
+
+    // 0. 관리자 로그인
+    const login = useCallback(async (loginEmail, loginPassword) => {
+        setLoggingIn(true);
+        setLoginError('');
+        try {
+            const res = await adminLogin(loginEmail, loginPassword);
+            if (!res?.idToken) throw new Error('NO_TOKEN');
+            saveToken(res.idToken);
+        } catch (error) {
+            const code = error?.response?.data?.detail;
+            setLoginError(
+                code === 'LOGIN_FAILED'
+                    ? '이메일 또는 비밀번호가 맞지 않아요.'
+                    : code?.startsWith?.('ADMIN_')
+                      ? '관리자 권한이 없는 계정이에요.'
+                      : '로그인하지 못했어요. 서버가 켜져 있는지 확인해 주세요.',
+            );
+        } finally {
+            setLoggingIn(false);
+        }
+    }, []);
+
+    // 시연용: .env.local에 관리자 계정이 있으면 자동으로 로그인해요
+    useEffect(() => {
+        const envEmail = import.meta.env.VITE_ADMIN_EMAIL;
+        const envPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+        if (adminToken || autoTried.current || !envEmail || !envPassword) return;
+        autoTried.current = true;
+        login(envEmail, envPassword);
+    }, [adminToken, login]);
 
     // 1. 주문 목록 및 직원 호출 데이터 불러오기 (Polling 3초 주기)
     const fetchData = useCallback(async () => {
@@ -49,6 +103,16 @@ export default function BossPage() {
                 setCalls(callRes);
             }
         } catch (error) {
+            // 토큰이 만료됐거나(1시간) 잘못됐으면 다시 로그인해요
+            // (자동 로그인은 다시 시도하지 않아요 → 깜빡임 반복 방지)
+            const status = error?.response?.status;
+            if (status === 401 || status === 403) {
+                const where = error?.config?.url ?? '';
+                const detail = error?.response?.data?.detail ?? '';
+                saveToken('');
+                setLoginError(`다시 로그인해 주세요. (${status} ${detail} ${where})`.trim());
+                return;
+            }
             console.error("매장 현황 데이터 동기화 실패:", error);
         }
     }, [adminToken]);
@@ -89,6 +153,52 @@ export default function BossPage() {
         }
     };
 
+    const onSubmitLogin = (e) => {
+        e.preventDefault();
+        if (!email || !password || loggingIn) return;
+        login(email, password);
+    };
+
+    if (!adminToken) {
+        return (
+            <div className="boss-stage">
+                <form className="boss-login glass" onSubmit={onSubmitLogin}>
+                    <Tello face="smile" size={88} />
+                    <h1 className="boss-login__title">{storeInfo.name} 매장 화면</h1>
+                    <p className="boss-login__desc">관리자 계정으로 로그인해 주세요.</p>
+                    <label className="boss-login__field">
+                        <span>이메일</span>
+                        <input
+                            type="email"
+                            autoComplete="username"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <label className="boss-login__field">
+                        <span>비밀번호</span>
+                        <input
+                            type="password"
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </label>
+                    {loginError && (
+                        <p className="boss-login__error" role="alert">
+                            {loginError}
+                        </p>
+                    )}
+                    <button type="submit" className="boss-card__btn boss-login__btn" disabled={loggingIn}>
+                        {loggingIn ? '로그인 중…' : '로그인'}
+                    </button>
+                </form>
+            </div>
+        );
+    }
+
     const nNew = orders.filter((o) => o.status === 'pending').length;
     const nPrep = orders.filter((o) => o.status === 'preparing').length;
 
@@ -100,6 +210,9 @@ export default function BossPage() {
                 </a>
                 <button type="button" className="demo-btn" onClick={fetchData}>
                     새로고침
+                </button>
+                <button type="button" className="demo-btn" onClick={() => saveToken('')}>
+                    로그아웃
                 </button>
             </div>
 
