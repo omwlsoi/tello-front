@@ -293,7 +293,7 @@ export default function ConfirmPage() {
                 </main>
 
                 <div className="phone__footer">
-                    <BigButton disabled={!cart.length || submitting} onClick={submit}>
+                    <BigButton disabled={!cart.length || submitting || syncing} onClick={submit}>
                         {submitting ? '주문 넣는 중…' : '맞아요, 주문할게요'}
                     </BigButton>
                     <BigButton variant="outline" onClick={() => navigate(backTo)}>

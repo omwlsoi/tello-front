@@ -115,6 +115,7 @@
     background: radial-gradient(70% 80% at 80% 70%, rgba(255, 248, 224, 0.95) 0%, rgba(236, 242, 255, 0.75) 60%, rgba(255, 255, 255, 0.6) 100%);
     padding: 14px 18px 14px 14px;
     display: flex;
+    flex-wrap: wrap; /* 좁으면 안내 글을 번호 아래로 내려요 */
     align-items: stretch;
     gap: 22px;
 }
@@ -145,7 +146,7 @@
 }
 .status-pay {
     flex: 1;
-    min-width: 0;
+    min-width: 120px;
     display: flex;
     flex-direction: column;
     justify-content: center;

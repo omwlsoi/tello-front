@@ -20,7 +20,7 @@ import menu from '../mocks/menu.json';
 import script from '../mocks/messages.json';
 import getErrorMessage from '../utils/getErrorMessage';
 import { addCartItem } from '../api/session';          // 👈 서버 장바구니 추가 API 연동
-import { createHelpRequest } from '../api/order';     // 👈 서버 직원 호출 API 연동
+import { cancelPendingOrder, createHelpRequest } from '../api/order'; // 👈 서버 직원 호출·미완성 음성 주문 취소
 import './MenuPage.css';
 
 // 수량 (1개가 기본, 4개 이상은 주문 확인 화면의 [+]로)
@@ -46,6 +46,18 @@ export default function MenuPage() {
     useEffect(() => {
         setFrom('menu');
     }, [setFrom]);
+
+    // 말로 주문하다가(크기 되묻기 등) 메뉴판으로 오면, 서버에 남은 미완성 주문을 지워요
+    // → 다시 말로 주문할 때 예전 질문이 이어지지 않게
+    useEffect(() => {
+        try {
+            const sessionId = localStorage.getItem('sessionId');
+            const sessionToken = localStorage.getItem('sessionToken');
+            if (sessionId && sessionToken) cancelPendingOrder(sessionId, sessionToken).catch(() => {});
+        } catch {
+            // 저장소를 못 쓰면 건너뛰어요
+        }
+    }, []);
 
     // 무응답 3단계 (30초 · 1분 · 1분 30초)
     const onIdleStep = useCallback(
