@@ -20,25 +20,21 @@ import {
     useSessionStore,
 } from '../stores/sessionStore';
 import script from '../mocks/messages.json';
-import { addCartItem } from '../api/session';          // 👈 서버 장바구니 추가 API 연동
-import { createHelpRequest } from '../api/order';     // 👈 서버 직원 호출 API 연동
+import { addCartItem, analyzeMessage } from '../api/session';
+import { createHelpRequest } from '../api/order';
 import './VoicePage.css';
 
-// "더 필요한 게 있나요?" 다음에 나오는 버튼
 const MORE_CHOICES = [
     { action: 'more', label: '네', sub: '더 주문할게요', kind: 'gbtn', said: '네' },
     { action: 'done', label: '아니요', sub: '주문 확인하기', kind: 'lime', said: '아니요' },
 ];
 
-// 수량은 옵션을 다 고른 뒤 마지막에 물어요: [1개]★ [2개] [🎙️ 말하기]
-// (3개 이상이나 수량 고치기는 마이크로 말하거나 주문 확인 화면의 [-] [+]로)
 const QTY_CHOICES = [
     { action: 'option', value: 1, said: '1개', label: '1개', kind: 'lime' },
     { action: 'option', value: 2, said: '2개', label: '2개', kind: 'gbtn' },
-    { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true }, // 마이크 아이콘만 보여요
+    { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true },
 ];
 
-// 텔로 상태
 const STATUS = {
     wait: { label: '대기 중', tone: 'gray', face: 'smile' },
     listen: { label: '듣는 중', tone: 'blue', face: 'listen' },
@@ -61,7 +57,6 @@ const withYo = (word) => {
 
 const toSpoken = (opt) => opt.replace(/핫/g, '따뜻하게').replace(/ · /g, ', ');
 
-// 2. 말로 주문하기 (백엔드 API 연동 버전)
 export default function VoicePage() {
     const navigate = useNavigate();
     const cart = useSessionStore((s) => s.cart);
@@ -94,13 +89,11 @@ export default function VoicePage() {
     );
     const me = useCallback((text, extra = {}) => pushMessage({ who: 'me', text, ...extra }), [pushMessage]);
 
-    // 🚀 서버 연동: 옵션을 다 고르면 프론트 장바구니 담기 + 서버 장바구니 API 동기화
     const addAndAskMore = useCallback(
         async (item, picked) => {
             const { qty = 1, ...options } = picked;
             addItem(item.id, options, qty);
 
-            // 서버 API 동기화
             try {
                 const sessionId = localStorage.getItem('sessionId');
                 const sessionToken = localStorage.getItem('sessionToken');
@@ -205,7 +198,6 @@ export default function VoicePage() {
     );
     const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length);
 
-    // 🚀 서버 연동: 직원 호출 API
     const callNow = async (reason) => {
         try {
             const sessionId = localStorage.getItem('sessionId');
@@ -222,7 +214,6 @@ export default function VoicePage() {
 
     const answerByVoice = (message) => {
         if (message.ask === 'recommend') return false;
-        // 수량은 시연 대본대로 "1개요"라고 말한 걸로 처리해요
         const choice =
             message.option === 'qty'
                 ? { action: 'option', value: 1, label: '1개' }
@@ -235,35 +226,68 @@ export default function VoicePage() {
 
     const onMic = () => {
         if (thinking) return;
-        listen(() => {
+        listen((transcript) => {
             setThinking(true);
             setTimeout(() => {
                 setThinking(false);
-                handleSpeech();
+                handleSpeech(transcript);
             }, 700);
         });
     };
 
-    const handleSpeech = () => {
-        const { voiceStep, messages } = useSessionStore.getState();
+    const handleSpeech = async (transcript = '') => {
+        const { messages } = useSessionStore.getState();
         const last = messages[messages.length - 1];
         setFailCount(0);
 
         if (last?.who === 'ai' && ASKS.includes(last.ask) && answerByVoice(last)) return;
 
-        const lastStep = script.steps.length - 1;
-        const step = script.steps[Math.min(voiceStep, lastStep)];
-        me(step.user);
-
-        if (step.recommend != null) {
-            recommend(step.recommend);
-        } else if (step.itemId) {
-            const picked = { ...(step.preset ?? {}), ...(step.qty ? { qty: step.qty } : {}) };
-            askOption(findItem(step.itemId), picked, step.ai);
-        } else {
-            ai(step.ai);
+        const spokenText = transcript;
+        if (!spokenText) {
+            ai("말씀하신 내용을 잘 듣지 못했어요. 다시 말씀해 주세요.");
+            return;
         }
-        setVoiceStep(Math.min(voiceStep + 1, lastStep));
+        me(spokenText);
+
+        try {
+            const sessionId = localStorage.getItem('sessionId');
+            const sessionToken = localStorage.getItem('sessionToken');
+
+            if (sessionId && sessionToken) {
+                setThinking(true);
+                // OpenAPI /api/sessions/{sessionId}/messages 연동
+                const response = await analyzeMessage(sessionId, sessionToken, spokenText);
+                setThinking(false);
+
+                if (response && response.item) {
+                    askOption(response.item, response.picked ?? {}, response.aiMessage);
+                } else if (response && response.recommend) {
+                    recommend(response.recommend);
+                } else {
+                    ai(response?.aiMessage || "말씀하신 내용을 잘 이해하지 못했어요. 다시 한 번 말씀해 주세요.");
+                }
+            } else {
+                setThinking(false);
+                ai("세션 정보를 찾을 수 없습니다. 다시 시도해 주세요.");
+            }
+        } catch (error) {
+            setThinking(false);
+            console.error("음성 메시지 서버 전송 실패:", error);
+            
+            const lastStep = script.steps.length - 1;
+            const { voiceStep } = useSessionStore.getState();
+            const step = script.steps[Math.min(voiceStep, lastStep)];
+            
+            if (step.recommend != null) {
+                recommend(step.recommend);
+            } else if (step.itemId) {
+                const picked = { ...(step.preset ?? {}), ...(step.qty ? { qty: step.qty } : {}) };
+                askOption(findItem(step.itemId), picked, step.ai);
+            } else {
+                ai(step.ai);
+            }
+            setVoiceStep(Math.min(voiceStep + 1, lastStep));
+        }
     };
 
     const onFail = () => {
@@ -375,7 +399,6 @@ export default function VoicePage() {
                     }
                 >
                     {bigText ? (
-                        // 큰 글씨 모드: 말로 주문 ……… [● 지금 상태] (위쪽 텔로링 줄 대신)
                         <span className="app-header__title voice-title--big">
                             <span className="voice-title__name">
                                 말로 주문

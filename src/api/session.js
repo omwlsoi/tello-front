@@ -80,3 +80,13 @@ export async function endCurrentSession() {
     // 이미 종료된 세션이면 무시
   }
 }
+
+// 8. 메시지 분석 및 주문 처리 (POST /api/sessions/{sessionId}/messages)[cite: 3]
+export async function analyzeMessage(sessionId, sessionToken, text) {
+  const response = await apiClient.post(
+    `/sessions/${sessionId}/messages`,
+    { text },
+    { headers: { Authorization: `Bearer ${sessionToken}` } }
+  );
+  return response.data;
+}
