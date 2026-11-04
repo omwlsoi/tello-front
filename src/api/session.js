@@ -59,3 +59,24 @@ export async function endSession(sessionId, sessionToken) {
   );
   return response.data;
 }
+
+// 지금 세션을 닫고 저장해 둔 세션 정보를 지워요 (처음으로·나가기)
+// 이미 끝난 세션(주문 완료 등)이면 서버가 거절해도 화면은 그대로 진행해요
+export async function endCurrentSession() {
+  let sessionId;
+  let sessionToken;
+  try {
+    sessionId = localStorage.getItem('sessionId');
+    sessionToken = localStorage.getItem('sessionToken');
+    localStorage.removeItem('sessionId');
+    localStorage.removeItem('sessionToken');
+  } catch {
+    return;
+  }
+  if (!sessionId || !sessionToken) return;
+  try {
+    await endSession(sessionId, sessionToken);
+  } catch {
+    // 이미 종료된 세션이면 무시
+  }
+}

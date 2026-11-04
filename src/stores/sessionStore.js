@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import menu from '../mocks/menu.json';
 import orderMock from '../mocks/order.json';
 import initialCart from '../mocks/cart.json';
+import { endCurrentSession } from '../api/session';
 
 // 손님 폰(/, /voice, /menu, /confirm, /status)과 매장 화면(/boss)이
 // 같은 브라우저의 다른 탭에서도 같은 주문을 보도록 localStorage 에 저장해요.
@@ -59,6 +60,9 @@ const cleanOptions = (item, options = {}) =>
                 (key !== 'ice' || options.temperature === 'ice'),
         ).map((key) => [key, options[key]]),
     );
+
+// 같은 메뉴·같은 옵션이면 같은 줄로 묶는 열쇠
+const lineKey = (id, picked) => [id, ...OPTION_ORDER.map((k) => picked[k] ?? '')].join('|');
 
 export const getCartCount = (cart) =>
     cart.reduce((sum, line) => sum + line.qty, 0);
@@ -124,7 +128,7 @@ export const useSessionStore = create(
                     const item = findItem(id);
                     if (!item) return {};
                     const picked = cleanOptions(item, options);
-                    const key = [id, ...OPTION_ORDER.map((k) => picked[k] ?? '')].join('|');
+                    const key = lineKey(id, picked);
                     const exists = s.cart.find((line) => line.key === key);
                     if (exists) {
                         return {
@@ -162,6 +166,39 @@ export const useSessionStore = create(
                         )
                         .filter((line) => line.qty > 0),
                 })),
+
+            // 서버 장바구니를 화면 장바구니로 바꿔요 (서버가 기준)
+            // 서버는 담을 때마다 항목(itemId)을 새로 만들어서, 같은 메뉴·옵션은 한 줄로 묶고
+            // 서버 항목들은 parts: [{ itemId, qty }]에 기억해 둬요 → [−][+]할 때 써요
+            setCartFromServer: (items = []) =>
+                set(() => {
+                    const lines = [];
+                    items.forEach((it) => {
+                        const item = findItem(it.menuId);
+                        if (!item) return;
+                        const picked = cleanOptions(item, it.selectedOptions ?? {});
+                        const key = lineKey(it.menuId, picked);
+                        const part = { itemId: it.itemId, qty: it.quantity };
+                        const line = lines.find((l) => l.key === key);
+                        if (line) {
+                            line.qty += it.quantity;
+                            line.parts.push(part);
+                            return;
+                        }
+                        lines.push({
+                            key,
+                            id: it.menuId,
+                            name: item.name,
+                            options: picked,
+                            opt: getOptionLabel(picked),
+                            icon: getItemIcon(item, picked),
+                            price: it.unitPrice ?? item.price + sizeExtra(picked.size),
+                            qty: it.quantity,
+                            parts: [part],
+                        });
+                    });
+                    return { cart: lines };
+                }),
 
             // ---------- 말로 주문 대화 ----------
             pushMessage: (message) =>
@@ -224,7 +261,8 @@ export const useSessionStore = create(
                 set((s) => ({ calls: s.calls.filter((c) => c.id !== id) })),
 
             // ---------- 처음으로 / 시연 초기화 ----------
-            startOver: () =>
+            startOver: () => {
+                endCurrentSession(); // 서버 세션도 닫아서 이전 장바구니가 남지 않게
                 set({
                     cart: [],
                     messages: [],
@@ -232,7 +270,8 @@ export const useSessionStore = create(
                     failCount: 0,
                     myOrder: null,
                     from: 'voice',
-                }),
+                });
+            },
             resetDemo: () => set(initialState()),
         }),
         {

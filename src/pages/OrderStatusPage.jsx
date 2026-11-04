@@ -56,10 +56,13 @@ export default function OrderStatusPage() {
     useEffect(() => {
         if (!orderId) return;
 
-        fetchOrderStatus(); // 첫 진입 시 즉시 조회
+        const first = setTimeout(fetchOrderStatus, 0); // 첫 진입 시 바로 조회
         const interval = setInterval(fetchOrderStatus, 3000); // 3초마다 폴링
 
-        return () => clearInterval(interval);
+        return () => {
+            clearTimeout(first);
+            clearInterval(interval);
+        };
     }, [orderId, fetchOrderStatus]);
 
     // 상태가 바뀔 때마다 소리로 알려줘요
@@ -84,9 +87,7 @@ export default function OrderStatusPage() {
     }, [status, orderData, speak]);
 
     const goHome = () => {
-        startOver();
-        localStorage.removeItem('sessionId');
-        localStorage.removeItem('sessionToken');
+        startOver(); // 서버 세션 종료 + 저장된 세션 정보 삭제까지 해요
         navigate('/');
     };
 
