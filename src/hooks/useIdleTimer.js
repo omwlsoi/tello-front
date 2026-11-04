@@ -34,7 +34,8 @@ export default function useIdleTimer(onIdle, timeout = 30000, enabled = true, re
 
 // 무응답 단계 (STEP 10-3): 30초 → 1분 → 1분 30초 마다 onStep(0 · 1 · 2) 을 불러요.
 // 손님이 화면을 만지면 처음부터 다시 세요 (시연 버튼은 제외). 돌려주는 next() 로 시연 때 바로 다음 단계를 띄워요.
-export function useIdleSteps(onStep, steps = 3, timeout = 30000) {
+// enabled 가 false 인 동안은 멈춰요 (예: 듣는 중·확인 중·실패 안내 중). 다시 true 가 되면 30초부터 새로 세요.
+export function useIdleSteps(onStep, steps = 3, timeout = 30000, enabled = true) {
     const stage = useRef(0);
     const stepRef = useRef(onStep);
 
@@ -57,6 +58,6 @@ export function useIdleSteps(onStep, steps = 3, timeout = 30000) {
         stepRef.current?.(now);
     }, [steps]);
 
-    useIdleTimer(next, timeout, true, true);
+    useIdleTimer(next, timeout, enabled, true);
     return next;
 }

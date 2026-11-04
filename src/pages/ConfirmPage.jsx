@@ -9,6 +9,7 @@ import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useIdleSteps } from '../hooks/useIdleTimer';
 import { getCartCount, getCartTotal, getChoiceLabel, useSessionStore } from '../stores/sessionStore';
 import formatPrice from '../utils/formatPrice';
+import getErrorMessage from '../utils/getErrorMessage';
 import script from '../mocks/messages.json';
 import { confirmOrder, createHelpRequest } from '../api/order'; // 👈 백엔드 주문 확정 및 직원 호출 API 연동
 import { deleteCartItem, getSessionCart, updateCartItem } from '../api/session';
@@ -102,7 +103,7 @@ export default function ConfirmPage() {
             if (res?.items) setCartFromServer(res.items);
         } catch (error) {
             console.error('장바구니 수량 변경 실패:', error);
-            setToast('수량을 바꾸지 못했어요. 다시 눌러 주세요.');
+            setToast(getErrorMessage(error, '수량을 바꾸지 못했어요. 다시 눌러 주세요.'));
             try {
                 const res = await getSessionCart(sessionId, sessionToken);
                 if (res?.items) setCartFromServer(res.items);
@@ -166,8 +167,9 @@ export default function ConfirmPage() {
             }
         } catch (error) {
             console.error("주문 확정 실패:", error);
-            setToast("주문 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
-            speak("주문 처리 중 오류가 발생했습니다.");
+            const msg = getErrorMessage(error, '주문을 넣지 못했어요. 다시 눌러 주세요.');
+            setToast(msg);
+            speak(msg);
             submittingRef.current = false;
             setSubmitting(false);
         }

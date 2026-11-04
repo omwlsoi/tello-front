@@ -18,6 +18,7 @@ import {
 import formatPrice from '../utils/formatPrice';
 import menu from '../mocks/menu.json';
 import script from '../mocks/messages.json';
+import getErrorMessage from '../utils/getErrorMessage';
 import { addCartItem } from '../api/session';          // 👈 서버 장바구니 추가 API 연동
 import { createHelpRequest } from '../api/order';     // 👈 서버 직원 호출 API 연동
 import './MenuPage.css';
@@ -107,6 +108,7 @@ export default function MenuPage() {
             }
         } catch (error) {
             console.error("서버 장바구니 담기 실패:", error);
+            setToast(getErrorMessage(error, '메뉴를 담지 못했어요. 다시 골라 주세요.'));
         }
     };
 
