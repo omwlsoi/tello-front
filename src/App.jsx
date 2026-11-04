@@ -15,6 +15,7 @@ function App() {
       <Route path="/menu" element={<MenuPage />} />
       <Route path="/confirm" element={<ConfirmPage />} />
       <Route path="/status" element={<OrderStatusPage />} />
+      <Route path="/status/:orderId" element={<OrderStatusPage />} />
       <Route path="/boss" element={<BossPage />} />
     </Routes>
   );
