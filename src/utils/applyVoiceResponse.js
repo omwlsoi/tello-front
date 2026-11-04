@@ -1,3 +1,5 @@
+import { OPTIONS } from '../stores/sessionStore';
+
 // 말로 주문: 백엔드 POST /api/sessions/{sessionId}/messages 응답을 화면에 반영해요
 // 응답 모양: { intent, items, issues, needsClarification, question, cart, nextAction, candidates? }
 //  - question  : 텔로링이 할 말 (되묻기·안내)
@@ -22,6 +24,27 @@ export const YES_NO_CHOICES = [
     { action: 'reply', label: '아니요', kind: 'gbtn', said: '아니요' },
     { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true },
 ];
+
+// 되묻기(크기·온도·얼음·수량) 답 버튼 — 글자를 그대로 백엔드에 보내면 알아들어요
+// 원래 VoicePage 디자인과 같게: 수량은 [1개][2개][마이크], 옵션은 마이크 칸 없이
+const QTY_REPLY = [1, 2].map((n) => ({ action: 'reply', label: `${n}개`, said: `${n}개`, kind: n === 1 ? 'lime' : 'gbtn' }));
+const MIC_REPLY = { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true };
+
+function clarifyChoices(response) {
+    const field = response?.issues?.[0]?.field;
+    if (field === 'quantity') return [...QTY_REPLY, MIC_REPLY];
+    const option = OPTIONS[field];
+    if (!option) return undefined;
+    return [
+        ...option.choices.map((c) => ({
+            action: 'reply',
+            label: c.label,
+            said: c.label,
+            sub: field === 'size' ? (c.extra ? `+${c.extra.toLocaleString()}원` : '기본 가격') : '',
+            kind: c.id === option.default ? 'lime' : 'gbtn',
+        })),
+    ];
+}
 
 const FALLBACK = '말씀하신 내용을 잘 이해하지 못했어요. 다시 한 번 말씀해 주세요.';
 
@@ -67,8 +90,14 @@ export default function applyVoiceResponse(
             setTimeout(() => goConfirm?.(), 900);
             return;
 
-        // 되묻기 (크기·온도·수량 등), 어떤 메뉴를 뺄지 고르기, 그 밖의 안내
-        case 'clarification':
+        // 되묻기 (크기·온도·얼음·수량) → 답 버튼도 같이
+        case 'clarification': {
+            const choices = clarifyChoices(response);
+            say(question || FALLBACK, choices ? { choices } : undefined);
+            return;
+        }
+
+        // 어떤 메뉴를 뺄지 고르기, 그 밖의 안내
         case 'select_cart_item':
         default:
             say(question || FALLBACK);

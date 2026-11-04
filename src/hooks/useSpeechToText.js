@@ -29,6 +29,13 @@ export default function useSpeechToText({ lang = 'ko-KR' } = {}) {
                 if (finished) return;
                 finished = true;
                 recRef.current = null;
+                // Safari는 끝난 뒤에도 마이크를 잡고 있어서 확실히 놓아줘요
+                rec.onresult = rec.onerror = rec.onend = null;
+                try {
+                    rec.abort();
+                } catch {
+                    // 이미 끝난 상태면 무시
+                }
                 setListening(false);
                 onResult?.(transcript.trim());
             };

@@ -198,7 +198,7 @@ export default function VoicePage() {
         },
         [ai],
     );
-    const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length, !listening && !thinking && failCount < 3);
+    const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length, 30000, !listening && !thinking && failCount < 3);
 
     const callNow = async (reason) => {
         try {
@@ -308,8 +308,7 @@ export default function VoicePage() {
 
     const onChoice = (message, choice, said) => {
         if (choice.action === 'reply') {
-            me(choice.said);
-            handleSpeech(choice.said);
+            handleSpeech(choice.said); // handleSpeech 안에서 me()로 말풍선을 띄워요
             return;
         }
 
