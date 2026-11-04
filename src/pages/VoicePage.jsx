@@ -30,11 +30,12 @@ const MORE_CHOICES = [
     { action: 'done', label: '아니요', sub: '주문 확인하기', kind: 'lime', said: '아니요' },
 ];
 
-// 수량 선택
+// 수량은 옵션을 다 고른 뒤 마지막에 물어요: [1개]★ [2개] [🎙️ 말하기]
+// (3개 이상이나 수량 고치기는 마이크로 말하거나 주문 확인 화면의 [-] [+]로)
 const QTY_CHOICES = [
     { action: 'option', value: 1, said: '1개', label: '1개', kind: 'lime' },
     { action: 'option', value: 2, said: '2개', label: '2개', kind: 'gbtn' },
-    { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true },
+    { action: 'mic', label: '말로 답하기', kind: 'gbtn', mic: true }, // 마이크 아이콘만 보여요
 ];
 
 // 텔로 상태
@@ -221,6 +222,7 @@ export default function VoicePage() {
 
     const answerByVoice = (message) => {
         if (message.ask === 'recommend') return false;
+        // 수량은 시연 대본대로 "1개요"라고 말한 걸로 처리해요
         const choice =
             message.option === 'qty'
                 ? { action: 'option', value: 1, label: '1개' }
@@ -373,6 +375,7 @@ export default function VoicePage() {
                     }
                 >
                     {bigText ? (
+                        // 큰 글씨 모드: 말로 주문 ……… [● 지금 상태] (위쪽 텔로링 줄 대신)
                         <span className="app-header__title voice-title--big">
                             <span className="voice-title__name">
                                 말로 주문

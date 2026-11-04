@@ -101,7 +101,7 @@ export default function ConfirmPage() {
         }
     };
 
-    // [−]로 마지막 1개를 빼려고 하면 한 번 더 물어봐요
+    // [−]로 마지막 1개를 빼려고 하면 한 번 더 물어봐요 (STEP 7)
     const minus = (line) => {
         if (line.qty > 1) {
             changeQty(line.key, -1);
@@ -209,7 +209,7 @@ export default function ConfirmPage() {
                     <p className="ai-note">
                         <InfoIcon />
                         <span>
-                            텔로링이 잘못 알아듣거나 틀릴 수 있어요.
+                            텔로링이 잘못 알아들을 수 있어요.
                             <br />
                             확인해 주세요.
                         </span>
