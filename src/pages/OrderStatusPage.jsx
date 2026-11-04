@@ -6,6 +6,7 @@ import BigButton from '../components/common/BigButton';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useSessionStore } from '../stores/sessionStore';
 import { getOrderDetails } from '../api/order'; // 👈 백엔드 주문 상태 조회 API 연동
+import formatOrderNumber from '../utils/formatOrderNumber';
 import './OrderStatusPage.css';
 
 // 단계별 텔로 표정·자세와 문구 맵핑 (백엔드 status: pending, preparing, completed 대응)
@@ -66,7 +67,7 @@ export default function OrderStatusPage() {
         if (!orderData || lastSpoken.current === status) return;
 
         if (lastSpoken.current === null) {
-            speak(`주문이 들어갔어요. 주문 번호는 ${orderData.orderNumber}번이에요.`);
+            speak(`주문이 들어갔어요. 주문 번호는 ${formatOrderNumber(orderData.orderNumber)}번이에요.`);
         } else if (status === 'preparing') {
             speak('지금 메뉴를 만들고 있어요.');
         } else if (status === 'completed') {
@@ -135,7 +136,7 @@ export default function OrderStatusPage() {
                         <div className="status-ticket glass">
                             <div className="status-number">
                                 <span className="status-number__label">주문 번호</span>
-                                <span className="status-number__big">{orderData.orderNumber}</span>
+                                <span className="status-number__big">{formatOrderNumber(orderData.orderNumber)}</span>
                             </div>
                             <div className="status-pay">
                                 <span className="status-pay__icon">
