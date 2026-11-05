@@ -7,6 +7,7 @@ import useTextToSpeech from '../hooks/useTextToSpeech';
 import { useSessionStore } from '../stores/sessionStore';
 import { getOrderDetails } from '../api/order'; // 👈 백엔드 주문 상태 조회 API 연동
 import formatOrderNumber from '../utils/formatOrderNumber';
+import vibrate from '../utils/vibrate';
 import './OrderStatusPage.css';
 
 // 단계별 텔로 표정·자세와 문구 맵핑 (백엔드 status: pending, preparing, completed 대응)
@@ -75,11 +76,7 @@ export default function OrderStatusPage() {
             speak('지금 메뉴를 만들고 있어요.');
         } else if (status === 'completed') {
             speak('주문한 메뉴가 나왔어요. 카운터로 와 주세요.');
-            try {
-                navigator.vibrate?.([200, 100, 200]);
-            } catch {
-                // 진동 미지원 기기 무시
-            }
+            vibrate(); // 안드로이드 진동 / 아이폰 햅틱
         } else if (status === 'picked') {
             speak(script.goodbye);
         }
