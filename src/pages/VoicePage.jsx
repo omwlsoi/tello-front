@@ -63,7 +63,6 @@ export default function VoicePage() {
     const cart = useSessionStore((s) => s.cart);
     const chat = useSessionStore((s) => s.messages);
     const pushMessage = useSessionStore((s) => s.pushMessage);
-    const setVoiceStep = useSessionStore((s) => s.setVoiceStep);
     const setFailCount = useSessionStore((s) => s.setFailCount);
     const failCount = useSessionStore((s) => s.failCount);
     const addItem = useSessionStore((s) => s.addItem);
