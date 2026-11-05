@@ -113,15 +113,16 @@
     min-height: 150px;
     border-radius: 28px;
     background: radial-gradient(70% 80% at 80% 70%, rgba(255, 248, 224, 0.95) 0%, rgba(236, 242, 255, 0.75) 60%, rgba(255, 255, 255, 0.6) 100%);
-    padding: 14px 18px 14px 14px;
+    padding: 14px 16px 14px 14px;
     display: flex;
-    flex-wrap: wrap; /* 좁으면 안내 글을 번호 아래로 내려요 */
     align-items: stretch;
-    gap: 22px;
+    gap: 14px;
+    container-type: inline-size; /* 카드 폭에 맞춰 번호·글씨 크기를 줄여요 (좁은 폰에서도 한 줄 유지) */
 }
 .status-number {
-    flex: 0 0 180px;
-    padding: 10px 8px;
+    flex: 0 0 auto;
+    min-width: 128px;
+    padding: 10px 12px;
     border-radius: 22px;
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(232, 240, 255, 0.62) 100%);
     border: 2.5px solid rgba(29, 78, 216, 0.75);
@@ -138,7 +139,7 @@
     color: var(--blue);
 }
 .status-number__big {
-    font-size: 84px;
+    font-size: clamp(56px, 26cqi, 84px);
     font-weight: 900;
     letter-spacing: -0.05em;
     line-height: 0.95;
@@ -146,7 +147,7 @@
 }
 .status-pay {
     flex: 1;
-    min-width: 120px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -162,7 +163,7 @@
     justify-content: center;
 }
 .status-pay__text {
-    font-size: 21px;
+    font-size: clamp(16px, 6.8cqi, 21px);
     font-weight: 800;
     line-height: 1.4;
 }

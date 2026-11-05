@@ -8,11 +8,15 @@ export const apiClient = axios.create({
   },
 });
 
+// 요청마다 손님 세션 토큰을 붙여요.
+// 단, 이미 Authorization을 직접 넣은 요청(매장 화면의 관리자 idToken 등)은 덮어쓰지 않아요.
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('sessionToken'); 
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    if (!config.headers['Authorization']) {
+      const token = localStorage.getItem('sessionToken');
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
     }
     return config;
   },
