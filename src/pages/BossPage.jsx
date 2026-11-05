@@ -28,6 +28,10 @@ const ago = (createdAt, now) => {
 // 6. 매장 화면 (태블릿): 주문과 직원 호출을 실시간으로 받아요.
 export default function BossPage() {
     const [orders, setOrders] = useState([]);
+    // 새로고침(처음 열 때 포함)하면 그때 이미 완료된 주문은 숨겨요
+    // (방금 [준비 완료]한 주문은 다음 새로고침 전까지 '완료됨'으로 남아 있어요)
+    const [hiddenIds, setHiddenIds] = useState(() => new Set());
+    const hideCompletedRef = useRef(true);
     const [calls, setCalls] = useState([]);
     const [now, setNow] = useState(() => Date.now());
     const [toast, setToast] = useState('');
@@ -96,6 +100,12 @@ export default function BossPage() {
             const orderRes = await getAdminOrders(adminToken);
             if (orderRes && orderRes.orders) {
                 setOrders(orderRes.orders);
+                if (hideCompletedRef.current) {
+                    hideCompletedRef.current = false;
+                    setHiddenIds(
+                        new Set(orderRes.orders.filter((o) => o.status === 'completed').map((o) => o.orderId)),
+                    );
+                }
             }
 
             const callRes = await getAdminHelpRequests(adminToken);
@@ -202,6 +212,7 @@ export default function BossPage() {
         );
     }
 
+    const visibleOrders = orders.filter((o) => !hiddenIds.has(o.orderId));
     const nNew = orders.filter((o) => o.status === 'pending').length;
     const nPrep = orders.filter((o) => o.status === 'preparing').length;
 
@@ -211,7 +222,14 @@ export default function BossPage() {
                 <a className="demo-btn" href="/" target="_blank" rel="noreferrer">
                     손님 화면 열기
                 </a>
-                <button type="button" className="demo-btn" onClick={fetchData}>
+                <button
+                    type="button"
+                    className="demo-btn"
+                    onClick={() => {
+                        hideCompletedRef.current = true;
+                        fetchData();
+                    }}
+                >
                     새로고침
                 </button>
                 <button type="button" className="demo-btn" onClick={() => saveToken('')}>
@@ -263,12 +281,12 @@ export default function BossPage() {
                 ))}
 
                 <div className="boss-grid">
-                    {orders.length === 0 && (
+                    {visibleOrders.length === 0 && (
                         <p className="boss-empty">
                             아직 주문이 없어요. 손님 폰에서 주문하면 여기에 떠요.
                         </p>
                     )}
-                    {orders.map((order) => {
+                    {visibleOrders.map((order) => {
                         const st = STATE[order.status] || STATE.pending;
                         return (
                             <article key={order.orderId} className={`boss-card glass is-${order.status}`}>
