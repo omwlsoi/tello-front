@@ -56,6 +56,8 @@ const withYo = (word) => {
     return `${word}${hasBatchim ? '이요' : '요'}`;
 };
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const toSpoken = (opt) => opt.replace(/핫/g, '따뜻하게').replace(/ · /g, ', ');
 
 export default function VoicePage() {
@@ -72,7 +74,7 @@ export default function VoicePage() {
     const bigText = useSessionStore((s) => s.bigText);
     const setCartFromServer = useSessionStore((s) => s.setCartFromServer);
 
-    const { speak } = useTextToSpeech();
+    const { speak, cancel: cancelSpeech } = useTextToSpeech();
     const { listening, listen } = useSpeechToText();
 
     const [sheet, setSheet] = useState(null);
@@ -81,12 +83,45 @@ export default function VoicePage() {
     const chatRef = useRef(null);
     const [thinking, setThinking] = useState(false);
 
+    // [수정 1] AI가 말하는 중인지 추적해요. 말하는 동안은 무응답 타이머를 멈춰서 답변이 끊기지 않게 해요.
+    const [speaking, setSpeaking] = useState(false);
+    const speakIdRef = useRef(0);
+    // [수정 3] 가장 최근에 시작한 말(Promise)을 기억해 둬요. 화면 이동 전에 이게 끝나길 기다려요.
+    const lastSpeechRef = useRef(Promise.resolve());
+
+    // [수정 1] 말하기 + 상태 추적. 끝까지 읽으면 true, 중간에 끊기면 false 로 끝나는 Promise 를 돌려줘요.
+    const talk = useCallback(
+        (spoken) => {
+            const id = ++speakIdRef.current;
+            setSpeaking(true);
+            const speech = Promise.resolve(speak(spoken)).then((done) => {
+                if (speakIdRef.current === id) setSpeaking(false);
+                return done;
+            });
+            lastSpeechRef.current = speech; // [수정 3]
+            return speech;
+        },
+        [speak],
+    );
+
+    // [수정 3] 말을 다 끝낸 뒤(최소 minMs 는 기다린 뒤) 화면을 옮겨요.
+    // 화면이 먼저 바뀌면 VoicePage 가 사라지면서 읽던 말이 끊기기 때문이에요.
+    // setTimeout 0: 화면 이동 함수가 말하기보다 먼저 불려도, 같은 순간에 시작한 말까지 기다리게 해요.
+    const goAfterSpeech = useCallback(
+        (path, minMs = 0) => {
+            setTimeout(() => {
+                Promise.all([lastSpeechRef.current, wait(minMs)]).then(() => navigate(path));
+            }, 0);
+        },
+        [navigate],
+    );
+
     const ai = useCallback(
         (text, extra = {}, spoken = text) => {
             pushMessage({ who: 'ai', text, ...extra });
-            speak(spoken);
+            return talk(spoken); // [수정 1] speak → talk
         },
-        [pushMessage, speak],
+        [pushMessage, talk],
     );
     const me = useCallback((text, extra = {}) => pushMessage({ who: 'me', text, ...extra }), [pushMessage]);
 
@@ -153,7 +188,7 @@ export default function VoicePage() {
             const rec = script.recommend[round];
             if (!rec) {
                 ai(script.recommendMenu);
-                setTimeout(() => navigate('/menu'), 1200);
+                goAfterSpeech('/menu', 1200); // [수정 3]
                 return;
             }
             ai(rec.text, {
@@ -168,7 +203,7 @@ export default function VoicePage() {
                 ],
             });
         },
-        [ai, navigate],
+        [ai, goAfterSpeech],
     );
 
     useEffect(() => {
@@ -189,6 +224,8 @@ export default function VoicePage() {
 
     const onIdleStep = useCallback(
         (stage) => {
+            // [수정 1] 안전장치: AI가 말하는 중이면 무응답 안내로 답변을 끊지 않아요
+            if (window.speechSynthesis?.speaking) return;
             const extra =
                 stage === 1
                     ? { idle: true, choices: [{ action: 'call', label: '직원 호출', kind: 'staff', full: true, reason: '오래 머무름' }] }
@@ -197,7 +234,13 @@ export default function VoicePage() {
         },
         [ai],
     );
-    const nextIdle = useIdleSteps(onIdleStep, script.idleSteps.length, 30000, !listening && !thinking && failCount < 3);
+    // [수정 1] 말하는 중(!speaking)에도 무응답 타이머를 멈춰요
+    const nextIdle = useIdleSteps(
+        onIdleStep,
+        script.idleSteps.length,
+        30000,
+        !listening && !thinking && !speaking && failCount < 3,
+    );
 
     const callNow = async (reason) => {
         try {
@@ -227,6 +270,8 @@ export default function VoicePage() {
 
     const onMic = () => {
         if (thinking) return;
+        // [수정 2] 손님이 말하려고 하면 AI 말은 멈추고 들어요 (마이크가 AI 목소리를 손님 말로 듣지 않게)
+        cancelSpeech();
         listen((transcript) => {
             setThinking(true);
             setTimeout(() => {
@@ -262,8 +307,8 @@ export default function VoicePage() {
                 applyVoiceResponse(response, {
                     say: ai,
                     setCartFromServer,
-                    goMenu: () => navigate('/menu'),
-                    goConfirm: () => navigate('/confirm'),
+                    goMenu: () => goAfterSpeech('/menu'), // [수정 3] 말 끝난 뒤 이동
+                    goConfirm: () => goAfterSpeech('/confirm'), // [수정 3]
                     moreChoices: MORE_CHOICES,
                     yesNoChoices: YES_NO_CHOICES,
                 });
@@ -326,12 +371,14 @@ export default function VoicePage() {
             recommend(message.round + 1);
         } else if (choice.action === 'more') {
             me(said ?? choice.label);
-            ai(script.moreYes);
-            onMic();
+            // [수정 2] AI가 말을 다 끝낸 뒤에 마이크를 켜요 (중간에 끊겼으면 자동으로 켜지 않아요)
+            ai(script.moreYes).then((done) => {
+                if (done) onMic();
+            });
         } else if (choice.action === 'done') {
             me(said ?? choice.label);
             ai(script.moreNo);
-            setTimeout(() => navigate('/confirm'), 900);
+            goAfterSpeech('/confirm', 900); // [수정 3]
         } else if (choice.action === 'menu') {
             navigate('/menu');
         } else if (choice.action === 'call') {
