@@ -40,6 +40,9 @@ npm run dev   # → http://localhost:5173
 
 ## 👩‍💻 Frontend
 
-| [이유진](https://github.com/omwlsoi) | [석연](https://github.com/seokyeonyy) |
+## 👩‍💻 Frontend
+
+| <img src="https://github.com/omwlsoi.png" width="100"/> | <img src="https://github.com/seokyeonyy.png" width="100"/> |
 |:---:|:---:|
+| [이유진](https://github.com/omwlsoi) | [석연](https://github.com/seokyeonyy) |
 | 프로젝트 세팅 · 화면 디자인 · 큰 글씨 모드 · 주문 흐름 · 매장 화면 로그인 · API 연동 | 페이지 구현 · 음성 주문 페이지 · 매장 화면 · API 연동 |
