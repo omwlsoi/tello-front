@@ -1,16 +1,45 @@
-# React + Vite
+<p align="center">
+  <img width="200" alt="Tello 로고" src="https://github.com/user-attachments/assets/2c860183-360a-46a9-a4af-f3eb01bbce28" />
+</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<div align="center">
 
-Currently, two official plugins are available:
+# Tello Frontend
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**장벽 없는 주문의 시작, 내 손 안의 배리어프리 키오스크**
 
-## React Compiler
+📌 프로젝트 소개 · 화면 · 시연 영상은 [Tello 메인 레포](https://github.com/omwlsoi/Tello)에서 볼 수 있어요.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+</div>
 
-## Expanding the ESLint configuration
+## 💻 기술 스택
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+<p>
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=React&logoColor=white"/>
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=JavaScript&logoColor=black"/>
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=Vite&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=ReactRouter&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Zustand-443E38?style=for-the-badge&logo=React&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=Axios&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Web_Speech_API-4285F4?style=for-the-badge&logo=GoogleChrome&logoColor=white"/>
+  <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=ESLint&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Prettier-000000?style=for-the-badge&logo=Prettier&logoColor=F7B93E"/>
+</p>
+
+## 🚀 실행 방법
+
+```bash
+npm install
+cp .env.example .env.local
+#   VITE_API_BASE_URL=/api
+#   VITE_API_PROXY_TARGET=http://localhost:8000   (백엔드 주소)
+npm run dev   # → http://localhost:5173
+```
+
+> 🎙️ 음성 인식은 Web Speech API를 사용하므로 **Chrome 또는 Edge**를 권장합니다.
+
+## 👩‍💻 Frontend
+
+| [이유진](https://github.com/omwlsoi) | [석연](https://github.com/seokyeonyy) |
+|:---:|:---:|
+| 프로젝트 세팅 · 디자인 반영 · 큰 글씨 모드 · 주문 흐름 · 매장 화면 로그인 · API 연동 | 페이지 구현 · 음성 주문 페이지 · 매장 화면 · API 연동 |
